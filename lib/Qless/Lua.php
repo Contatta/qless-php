@@ -24,9 +24,7 @@ class Lua
         if (empty($this->sha)) {
             $this->reload();
         }
-        $luaArgs  = [$command, microtime(true)];
-        $argArray = array_merge($luaArgs, $args);
-        $result = $this->evalSha($this->sha, $argArray);
+        $result = $this->evalSha($this->sha, $command, $args);
         $error  = $this->getLastError();
         if ($error) {
             $this->handleError($error);

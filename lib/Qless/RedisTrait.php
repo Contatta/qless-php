@@ -22,8 +22,9 @@ trait RedisTrait {
                 ]];
             $options = [];
             if(extension_loaded('phpiredis')) {
+                $config['parameters']['persistent'] = true;
                 $options['connections'] = [
-                    'tcp'  => 'Predis\Connection\PhpiredisConnection',
+                    'tcp'  => 'Predis\Connection\PhpiredisStreamConnection',
                     'unix' => 'Predis\Connection\PhpiredisConnection',
                 ];
             }
@@ -71,21 +72,28 @@ trait RedisTrait {
     }
     protected function clearLastError() {
         $this->redisError = null;
-        if(get_class($this->redis) === 'Redis') {
+        if($this->redisConfig['type'] === 'redis') {
             $this->redis->clearLastError();
         }
     }
-    protected function evalSha($sha, $argArray) {
-        switch(get_class($this->redis)) {
-            case 'Redis':
+    protected function evalSha($sha, $command, $args) {
+        switch($this->redisConfig['type']) {
+            case 'redis':
+                $argArray = array_merge([$command, microtime(true)], $args);
                 $out = $this->redis->evalSha($sha,$argArray);
                 $this->redisError = $this->redis->getLastError();
                 return $out;
-            case 'Predis\Client':
-                array_unshift($argArray,0);
-                array_unshift($argArray,$sha);
+            case 'predis':
+                $args = array_merge(['evalsha',$sha,0,$command,microtime(true)],$args);
                 try {
-                    return call_user_func_array([$this->redis,'evalSha'],$argArray);
+                    $cmd = phpiredis_format_command($args);
+                    stream_socket_sendto($this->redis->getConnection()->getResource(),$cmd);
+                    $data = $this->redis->getConnection()->read();
+                    if($data instanceof \Predis\ResponseError) {
+                        $this->redisError = $data->getMessage();
+                        return false;
+                    }
+                    return $data;
                 } catch(\Exception $e) {
                     $this->redisError = $e->getMessage();
                     return false;
