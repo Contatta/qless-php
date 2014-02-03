@@ -16,7 +16,7 @@ class QlessTest extends PHPUnit_Framework_TestCase {
     public static function setUpBeforeClass() {
         self::$REDIS_HOST = getenv('REDIS_HOST') ?: 'localhost';
         self::$REDIS_PORT = getenv('REDIS_PORT') ?: 6379;
-        self::$REDIS_CLASS = getenv('REDIS_CLASS') ?: 'predis';
+        self::$REDIS_CLASS = getenv('REDIS_CLASS') ?: 'redis';
     }
 
     /**
