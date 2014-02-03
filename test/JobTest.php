@@ -118,6 +118,23 @@ class JobTest extends QlessTest
         $this->assertEquals(['jid-1'], $res);
     }
 
+    public function testCreateResource() {
+        $this->client->lua->run('resource.set',['test',0]);
+        $queue = new Qless\Queue("testQueue", $this->client);
+
+        $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
+        $queue->put("Sample\\TestWorkerImpl", "jid-3", $testData, 0, 0, true, 0, ['test']);
+
+        $job1 = $queue->pop("worker-1");
+        $this->assertEmpty($job1);
+
+        $this->client->lua->run('resource.set',['test',1]);
+
+        $job1 = $queue->pop("worker-1");
+        $this->assertNotEmpty($job1);
+        $res = $job1[0]->cancel();
+        $this->assertEquals(['jid-3'], $res);
+    }
 
 }
  
