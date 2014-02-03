@@ -29,6 +29,8 @@ trait RedisTrait {
                 ];
             }
             $redis = new \Predis\Client($config,$options);
+        } elseif($this->redisConfig['type'] == 'phpiredis') {
+            $redis = phpiredis_connect($this->redisConfig['host'],$this->redisConfig['port']);
         } else {
             throw QlessException::createException('Could not find class with which to connect a Redis database.');
         }
@@ -38,7 +40,14 @@ trait RedisTrait {
      * Reconnect to the Redis server
      */
     public function reconnect() {
-        $this->redis->close();
+        switch($this->redisConfig['type']) {
+            case 'phpiredis':
+                unset($this->redis);
+                break;
+            default:
+                $this->redis->close();
+                break;
+        }
         $this->connect();
     }
 
@@ -46,21 +55,28 @@ trait RedisTrait {
      * @var string
      */
     protected $sha = null;
+    protected $response = null;
 
     protected function reload() {
         $file = __DIR__ . '/qless-core/qless.lua';
         $this->sha = sha1_file($file);
-        switch(get_class($this->redis)) {
-            case 'Redis':
+        switch($this->redisConfig['type']) {
+            case 'redis':
                 $res = $this->redis->script('exists', $this->sha);
                 if ($res[0] !== 1) {
                     $this->sha = $this->redis->script('load', file_get_contents($file));
                 }
                 break;
-            case 'Predis\Client':
+            case 'predis':
                 $res = $this->redis->script('EXISTS',$this->sha);
                 if ($res[0] !== 1) {
                     $this->redis->script('LOAD', file_get_contents($file));
+                }
+                break;
+            case 'phpiredis':
+                $response = phpiredis_command_bs($this->redis,['SCRIPT','EXISTS',$this->sha]);
+                if($response[0] !== 1) {
+                    phpiredis_command_bs($this->redis,['SCRIPT','LOAD',file_get_contents($file)]);
                 }
                 break;
         }
@@ -98,6 +114,22 @@ trait RedisTrait {
                     $this->redisError = $e->getMessage();
                     return false;
                 }
+            case 'phpiredis':
+                $args = array_merge(['EVALSHA',$sha,0,$command,microtime(true)],$args);
+                $response = phpiredis_command_bs($this->redis,$args);
+                return $response;
+        }
+    }
+    /**
+     * Removes all the entries from the default Redis database
+     *
+     * @internal
+     */
+    public function flush() {
+        if($this->redisConfig['type'] == 'phpiredis') {
+            phpiredis_command_bs($this->redis,['flushdb']);
+        } else {
+            $this->redis->flushDB();
         }
     }
 }

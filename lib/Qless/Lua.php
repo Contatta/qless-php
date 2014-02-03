@@ -39,13 +39,5 @@ class Lua
         throw QlessException::createException($error);
     }
 
-    /**
-     * Removes all the entries from the default Redis database
-     *
-     * @internal
-     */
-    public function flush() {
-        $this->redis->flushDB();
-    }
 
 }
