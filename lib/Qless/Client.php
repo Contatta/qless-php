@@ -2,12 +2,6 @@
 
 namespace Qless;
 
-require_once __DIR__ . '/Lua.php';
-require_once __DIR__ . '/Config.php';
-
-use Redis;
-
-
 /**
  * Class Client
  * client to call lua scripts in qless-core for specific commands
@@ -24,7 +18,7 @@ use Redis;
  */
 class Client
 {
-
+    use RedisTrait;
     /**
      * Used for testing and internal use
      *
@@ -36,17 +30,10 @@ class Client
      * @var Config
      */
     public $config;
-    /**
-     * @var array
-     */
-    private $redis = [];
 
-    public function __construct($host = 'localhost', $port = 6379) {
-        $this->redis['redis'] = new Redis();
-        $this->redis['host']  = $host;
-        $this->redis['port']  = $port;
-
-        $this->lua    = new Lua($this->redis);
+    public function __construct($host = 'localhost', $port = 6379, $type=null) {
+        $this->prepareConnection(['host'=>$host,'port'=>$port,'type'=>$type ?: 'redis']);
+        $this->lua    = new Lua($this->redisConfig);
         $this->config = new Config($this);
     }
 
@@ -58,7 +45,7 @@ class Client
      * @internal
      */
     public function setLuaClass($luaClass) {
-        $this->lua = new $luaClass($this->redis);
+        $this->lua = new $luaClass($this->redisConfig);
     }
 
     public function __call($command, $arguments) {
@@ -75,4 +62,4 @@ class Client
     public function reconnect() {
         $this->lua->reconnect();
     }
-} 
+}

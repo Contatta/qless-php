@@ -13,6 +13,9 @@
         "ext-pcntl": "*",
         "psr/log": "1.0.0"
     },
+    "require-dev": {
+        "predis/predis": "~0.8"
+    },
     "autoload": {
         "psr-0": {
             "Qless": "lib"

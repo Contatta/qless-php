@@ -1,6 +1,5 @@
 <?php
-
-require_once __DIR__ . '/../lib/Qless/Lua.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 
 class LuaTester extends \Qless\Lua {
 
@@ -12,8 +11,8 @@ class LuaTester extends \Qless\Lua {
         }
         $luaArgs  = [$command, $this->time];
         $argArray = array_merge($luaArgs, $args);
-        $result = $this->redisCli->evalSha($this->sha, $argArray);
-        $error  = $this->redisCli->getLastError();
+        $result = $this->evalSha($this->sha, $argArray);
+        $error  = $this->getLastError();
         if ($error) {
             $this->handleError($error);
             return null;

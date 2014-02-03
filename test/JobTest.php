@@ -16,7 +16,7 @@ class JobTest extends QlessTest
         $queue->put("Sample\\TestWorkerImpl", "jobTestDEF", $testData);
 
         $job1 = $queue->pop("worker-1")[0];
-        $queue->pop("worker-2");
+        $job2 = $queue->pop("worker-2");
         $job1->heartbeat();
     }
 

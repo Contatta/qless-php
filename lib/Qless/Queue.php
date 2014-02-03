@@ -2,10 +2,6 @@
 
 namespace Qless;
 
-require_once __DIR__ . '/Qless.php';
-require_once __DIR__ . '/Job.php';
-
-
 class Queue
 {
     /**
