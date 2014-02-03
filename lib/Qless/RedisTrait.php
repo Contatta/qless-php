@@ -47,19 +47,19 @@ trait RedisTrait {
     protected $sha = null;
 
     protected function reload() {
-        $script    = file_get_contents(__DIR__ . '/qless-core/qless.lua', true);
-        $this->sha = sha1($script);
+        $file = __DIR__ . '/qless-core/qless.lua';
+        $this->sha = sha1_file($file);
         switch(get_class($this->redis)) {
             case 'Redis':
                 $res = $this->redis->script('exists', $this->sha);
                 if ($res[0] !== 1) {
-                    $this->sha = $this->redis->script('load', $script);
+                    $this->sha = $this->redis->script('load', file_get_contents($file));
                 }
                 break;
             case 'Predis\Client':
                 $res = $this->redis->script('EXISTS',$this->sha);
                 if ($res[0] !== 1) {
-                    $this->redis->script('LOAD', $script);
+                    $this->redis->script('LOAD', file_get_contents($file));
                 }
                 break;
         }
