@@ -15,11 +15,11 @@ trait RedisTrait {
             $redis->connect($this->redisConfig['host'], $this->redisConfig['port']);
         } elseif($this->redisConfig['type'] == 'predis') {
             $config =
-                ['parameters'=>[
+                [
                     'scheme'=>'tcp',
                     'host' => $this->redisConfig['host'],
                     'port' => $this->redisConfig['port'],
-                ]];
+                ];
             $options = [];
             if(extension_loaded('phpiredis')) {
                 $config['parameters']['persistent'] = true;
