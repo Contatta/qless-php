@@ -341,7 +341,7 @@ class Job
         try {
             $instance = $this->getInstance();
 
-            $performMethod = $this->data['performMethod'];
+            $performMethod = $this->data['performMethod'] ?: 'perform';
 
             $instance->$performMethod($this);
 
