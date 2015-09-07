@@ -387,18 +387,19 @@ class Job
         }
 
         if (!class_exists($this->klass_name)) {
-            throw new \Exception(
+            throw new QlessException(
                 'Could not find job class ' . $this->klass_name . '.'
             );
         }
 
-        if (!method_exists($this->klass_name, $this->data['performMethod'])) {
-            throw new \Exception(
+        $this->instance = new $this->klass_name;
+
+        if (!method_exists($this->instance, $this->data['performMethod'])) {
+            throw new QlessException(
                 'Job class ' . $this->klass_name . ' does not contain perform method ' . $this->data['performMethod']
             );
         }
 
-        $this->instance = new $this->klass_name;
 
         return $this->instance;
     }
