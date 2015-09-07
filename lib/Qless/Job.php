@@ -394,9 +394,12 @@ class Job
 
         $this->instance = new $this->klass_name;
 
-        if (!method_exists($this->instance, $this->data['performMethod'])) {
+        $performMethod = is_array($this->data) && array_key_exists('performMethod', $this->data) ?
+            $this->data['performMethod'] : 'perform';
+
+        if (!method_exists($this->instance, $performMethod)) {
             throw new QlessException(
-                'Job class ' . $this->klass_name . ' does not contain perform method ' . $this->data['performMethod']
+                'Job class ' . $this->klass_name . ' does not contain perform method: ' . $performMethod
             );
         }
 
