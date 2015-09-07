@@ -341,7 +341,7 @@ class Job
         try {
             $instance = $this->getInstance();
 
-            $performMethod = $this->data['performMethod'];
+            $performMethod = $this->data['performMethod'] ?: 'perform';
 
             $instance->$performMethod($this);
 
@@ -387,18 +387,22 @@ class Job
         }
 
         if (!class_exists($this->klass_name)) {
-            throw new \Exception(
+            throw new QlessException(
                 'Could not find job class ' . $this->klass_name . '.'
             );
         }
 
-        if (!method_exists($this->klass_name, $this->data['performMethod'])) {
-            throw new \Exception(
-                'Job class ' . $this->klass_name . ' does not contain perform method ' . $this->data['performMethod']
+        $this->instance = new $this->klass_name;
+
+        $performMethod = is_array($this->data) && array_key_exists('performMethod', $this->data) ?
+            $this->data['performMethod'] : 'perform';
+
+        if (!method_exists($this->instance, $performMethod)) {
+            throw new QlessException(
+                'Job class ' . $this->klass_name . ' does not contain perform method: ' . $performMethod
             );
         }
 
-        $this->instance = new $this->klass_name;
 
         return $this->instance;
     }
