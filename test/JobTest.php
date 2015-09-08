@@ -5,6 +5,53 @@ require_once __DIR__ . '/QlessTest.php';
 class JobTest extends QlessTest
 {
     /**
+     * @expectedException \Exception
+     */
+    public function testGetInstanceWithInvalidClassThrows() {
+        $queue = new Qless\Queue("testQueue", $this->client);
+        $this->client->config->set('heartbeat', -10);
+        $this->client->config->set('grace-period', 0);
+
+        $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
+        $queue->put("ClassDoesNotExist", "jobTestDEF", $testData);
+
+        $job1 = $queue->pop("worker-1")[0];
+
+        $job1->getInstance();
+    }
+
+    /**
+     * @expectedException \Exception
+     */
+    public function testGetInstanceWithInvalidPerformMethodThrows() {
+        $queue = new Qless\Queue("testQueue", $this->client);
+        $this->client->config->set('heartbeat', -10);
+        $this->client->config->set('grace-period', 0);
+
+        $testData = ["performMethod" => 'myNonexistantMethod', "payload" => "otherData"];
+        $queue->put("TestWorkerImpl", "jobTestDEF", $testData);
+
+        $job1 = $queue->pop("worker-1")[0];
+
+        $job1->getInstance();
+    }
+
+    public function testGetInstanceReturnsHandler() {
+        $queue = new Qless\Queue("testQueue", $this->client);
+        $this->client->config->set('heartbeat', -10);
+        $this->client->config->set('grace-period', 0);
+
+        $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
+        $queue->put("TestWorkerImpl", "jobTestDEF", $testData);
+
+        $job1 = $queue->pop("worker-1")[0];
+
+        $instance = $job1->getInstance();
+
+        $this->assertInstanceOf(TestWorkerImpl::class, $instance);
+    }
+
+    /**
      * @expectedException \Qless\JobLostException
      */
     public function testHeartbeatForInvalidJobThrows() {
@@ -13,7 +60,7 @@ class JobTest extends QlessTest
         $this->client->config->set('grace-period', 0);
 
         $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
-        $queue->put("Sample\\TestWorkerImpl", "jobTestDEF", $testData);
+        $queue->put("TestWorkerImpl", "jobTestDEF", $testData);
 
         $job1 = $queue->pop("worker-1")[0];
         $queue->pop("worker-2");
@@ -22,7 +69,7 @@ class JobTest extends QlessTest
 
     public function testCanGetCorrectTTL() {
         $queue = new Qless\Queue("testQueue", $this->client);
-        $queue->put("Sample\\TestWorkerImpl", "jobTestDEF", []);
+        $queue->put("TestWorkerImpl", "jobTestDEF", []);
         $job = $queue->pop("worker-1")[0];
         $ttl = $job->ttl();
         $this->assertGreaterThan(55, $ttl);
@@ -32,7 +79,7 @@ class JobTest extends QlessTest
         $queue = new Qless\Queue("testQueue", $this->client);
 
         $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
-        $queue->put("Sample\\TestWorkerImpl", "jobTestDEF", $testData);
+        $queue->put("TestWorkerImpl", "jobTestDEF", $testData);
 
         $job1 = $queue->pop("worker-1")[0];
         $res = $job1->complete();
@@ -43,7 +90,7 @@ class JobTest extends QlessTest
         $queue = new Qless\Queue("testQueue", $this->client);
 
         $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
-        $queue->put("Sample\\TestWorkerImpl", "jid", $testData);
+        $queue->put("TestWorkerImpl", "jid", $testData);
 
         $job1 = $queue->pop("worker-1")[0];
         $res = $job1->fail('account', 'failed to connect');
@@ -53,11 +100,13 @@ class JobTest extends QlessTest
         $this->assertEmpty($job1);
     }
 
+    #region retry
+
     public function testRetryDoesReturnJobAndDefaultsToFiveRetries() {
         $queue = new Qless\Queue("testQueue", $this->client);
 
         $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
-        $queue->put("Sample\\TestWorkerImpl", "jid", $testData);
+        $queue->put("TestWorkerImpl", "jid", $testData);
 
         $job1 = $queue->pop("worker-1")[0];
         $remaining = $job1->retry('account', 'failed to connect');
@@ -71,7 +120,7 @@ class JobTest extends QlessTest
         $queue = new Qless\Queue("testQueue", $this->client);
 
         $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
-        $queue->put("Sample\\TestWorkerImpl", "jid", $testData, 0, 1);
+        $queue->put("TestWorkerImpl", "jid", $testData, 0, 1);
 
         $job1 = $queue->pop("worker-1")[0];
         $remaining = $job1->retry('account', 'failed to connect');
@@ -85,7 +134,7 @@ class JobTest extends QlessTest
         $queue = new Qless\Queue("testQueue", $this->client);
 
         $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
-        $queue->put("Sample\\TestWorkerImpl", "jid", $testData, 0, 0);
+        $queue->put("TestWorkerImpl", "jid", $testData, 0, 0);
 
         $job1 = $queue->pop("worker-1")[0];
         $remaining = $job1->retry('account', 'failed to connect');
@@ -96,7 +145,7 @@ class JobTest extends QlessTest
         $queue = new Qless\Queue("testQueue", $this->client);
 
         $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
-        $queue->put("Sample\\TestWorkerImpl", "jid", $testData, 0, 0);
+        $queue->put("TestWorkerImpl", "jid", $testData, 0, 0);
 
         $job1 = $queue->pop("worker-1")[0];
         $job1->retry('account', 'failed to connect');
@@ -105,12 +154,16 @@ class JobTest extends QlessTest
         $this->assertEmpty($job1);
     }
 
+    #endregion
+
+    #region cancel
+
     public function testCancelRemovesJob() {
         $queue = new Qless\Queue("testQueue", $this->client);
 
         $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
-        $queue->put("Sample\\TestWorkerImpl", "jid-1", $testData, 0, 0);
-        $queue->put("Sample\\TestWorkerImpl", "jid-2", $testData, 0, 0);
+        $queue->put("TestWorkerImpl", "jid-1", $testData, 0, 0);
+        $queue->put("TestWorkerImpl", "jid-2", $testData, 0, 0);
 
         $job1 = $queue->pop("worker-1")[0];
         $res = $job1->cancel();
@@ -122,8 +175,8 @@ class JobTest extends QlessTest
         $queue = new Qless\Queue("testQueue", $this->client);
 
         $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
-        $queue->put("Sample\\TestWorkerImpl", "jid-1", $testData, 0, 0);
-        $queue->put("Sample\\TestWorkerImpl", "jid-2", $testData, 0, 0, true, 0, [], 0, [], ['jid-1']);
+        $queue->put("TestWorkerImpl", "jid-1", $testData, 0, 0);
+        $queue->put("TestWorkerImpl", "jid-2", $testData, 0, 0, true, 0, [], 0, [], ['jid-1']);
 
         $job1 = $queue->pop("worker-1")[0];
         $res = $job1->cancel(true);
@@ -138,19 +191,21 @@ class JobTest extends QlessTest
         $queue = new Qless\Queue("testQueue", $this->client);
 
         $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
-        $queue->put("Sample\\TestWorkerImpl", "jid-1", $testData, 0, 0);
-        $queue->put("Sample\\TestWorkerImpl", "jid-2", $testData, 0, 0, true, 0, [], 0, [], ['jid-1']);
+        $queue->put("TestWorkerImpl", "jid-1", $testData, 0, 0);
+        $queue->put("TestWorkerImpl", "jid-2", $testData, 0, 0, true, 0, [], 0, [], ['jid-1']);
 
         $job1 = $queue->pop("worker-1")[0];
         $job1->cancel();
     }
+
+    #endregion
 
     #region tags
 
     public function testItCanAddTagsToAJobWithNoExistingTags() {
         $queue = new Qless\Queue("testQueue", $this->client);
         $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
-        $queue->put("Sample\\TestWorkerImpl", "jid-1", $testData, 0, 0);
+        $queue->put("TestWorkerImpl", "jid-1", $testData, 0, 0);
 
         $job1 = $queue->pop("worker-1")[0];
         $job1->tag('a', 'b');
@@ -162,7 +217,7 @@ class JobTest extends QlessTest
     public function testItCanAddTagsToAJobWithExistingTags() {
         $queue = new Qless\Queue("testQueue", $this->client);
         $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
-        $queue->put("Sample\\TestWorkerImpl", "jid-1", $testData, 0, 0, true, 0, [], 0, ['1', '2']);
+        $queue->put("TestWorkerImpl", "jid-1", $testData, 0, 0, true, 0, [], 0, ['1', '2']);
 
         $job1 = $queue->pop("worker-1")[0];
         $job1->tag('a', 'b');
@@ -174,7 +229,7 @@ class JobTest extends QlessTest
     public function testItCanRemoveExistingTags() {
         $queue = new Qless\Queue("testQueue", $this->client);
         $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
-        $queue->put("Sample\\TestWorkerImpl", "jid-1", $testData, 0, 0, true, 0, [], 0, ['1', '2', '3']);
+        $queue->put("TestWorkerImpl", "jid-1", $testData, 0, 0, true, 0, [], 0, ['1', '2', '3']);
 
         $job1 = $queue->pop("worker-1")[0];
         $job1->untag('2', '3');
@@ -191,7 +246,7 @@ class JobTest extends QlessTest
         $queue = new Qless\Queue("testQueue", $this->client);
 
         $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
-        $queue->put("Sample\\TestWorkerImpl", "jid-1", $testData, 0, 0, true, 1, [], 5, ['tag1','tag2']);
+        $queue->put("TestWorkerImpl", "jid-1", $testData, 0, 0, true, 1, [], 5, ['tag1','tag2']);
 
         $job = $queue->pop("worker-1")[0];
         $job->requeue();
@@ -206,7 +261,7 @@ class JobTest extends QlessTest
         $queue = new Qless\Queue("testQueue", $this->client);
 
         $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
-        $queue->put("Sample\\TestWorkerImpl", "jid-1", $testData, 0, 0, true, 1, [], 5, ['tag1','tag2']);
+        $queue->put("TestWorkerImpl", "jid-1", $testData, 0, 0, true, 1, [], 5, ['tag1','tag2']);
 
         $job = $queue->pop("worker-1")[0];
         $job->requeue(['tags' => ['nnn']]);
@@ -224,7 +279,7 @@ class JobTest extends QlessTest
         $queue = new Qless\Queue("testQueue", $this->client);
 
         $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
-        $queue->put("Sample\\TestWorkerImpl", "jid-1", $testData, 0, 0, true, 1, [], 5, ['tag1','tag2']);
+        $queue->put("TestWorkerImpl", "jid-1", $testData, 0, 0, true, 1, [], 5, ['tag1','tag2']);
 
         $job = $queue->pop("worker-1")[0];
         $this->client->cancel('jid-1');
