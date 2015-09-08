@@ -38,8 +38,9 @@
     </groups>
 
     <php>
-        <env name="REDIS_HOST" value="192.168.50.130"/>
-        <env name="REDIS_PORT" value="6380"/>
+        <!-- uncomment to override redis server for testing -->
+        <!--<env name="REDIS_HOST" value="192.168.50.130"/>-->
+        <!--<env name="REDIS_PORT" value="6380"/>-->
     </php>
 
 </phpunit>
