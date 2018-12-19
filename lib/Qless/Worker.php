@@ -106,7 +106,7 @@ class Worker {
 
         $this->startup();
         $this->who = 'master:' . $this->workerName;
-        $this->logContext = [ 'type' => $this->who, 'job.identifier' => null ];
+        $this->logContext = [ 'type' => $this->who, 'job_identifier' => null ];
         $this->logger->info('{type}: Worker started', $this->logContext);
         $this->logger->info('{type}: monitoring the following queues (in order), {queues}', ['type'=>$this->who, 'queues' => implode(', ', $this->queues)]);
 
@@ -138,7 +138,7 @@ class Worker {
             }
 
             $this->job = $job;
-            $this->logContext['job.identifier'] = $job->getId();
+            $this->logContext['job_identifier'] = $job->getId();
 
             // fork processes
             $this->childStart();
@@ -187,7 +187,7 @@ class Worker {
             }
             $this->sockets                      = [];
             $this->job                          = null;
-            $this->logContext['job.identifier'] = null;
+            $this->logContext['job_identifier'] = null;
             $did_work                           = true;
 
             /**
