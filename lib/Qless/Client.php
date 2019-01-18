@@ -8,28 +8,29 @@ require_once __DIR__ . '/Resource.php';
 require_once __DIR__ . '/Jobs.php';
 
 /**
- * Class Client
- * client to call lua scripts in qless-core for specific commands
+ * Call commands in the qless-core lua script
  *
- * @package Qless
- *
- * @method string put() put(\string $worker, \string $queue, \string $job_identifier, \string $klass, array $data, \int $delay_in_seconds)
- * @method string recur() recur(\string $klass, \string $jid, array $data, \int $interval, \int $offset, \int $retries, \int $priority, array $resources, array $tags)
- * @method string requeue() requeue(\string $worker, \string $queue, \string $job_identifier, \string $klass, array $data, \int $delay_in_seconds)
- * @method array pop() pop(\string $queue, \string $worker, \int $count)
- * @method int length() length(\string $queue)
+ * @method string put() put(string $worker, string $queue, string $job_identifier, string $klass, string $data, int $delay_in_seconds, mixed ...$args)
+ * @method string recur() recur(string $queue, string $jid, string $klass, string $data, string $spec, mixed ...$args)
+ * @method string requeue() requeue(string $worker, string $queue, string $job_identifier, string $klass, string $data, int $delay_in_seconds, mixed ...$args)
+ * @method string pop() pop(string $queue, string $worker, int $count)
+ * @method int length() length(string $queue)
  * @method int heartbeat() heartbeat()
- * @method int retry() retry(\string $jid, \string $queue, \string $worker, \int $delay = 0, \string $group, \string $message)
- * @method int cancel() cancel(\string $jid)
- * @method int unrecur() unrecur(\string $jid)
- * @method int fail() fail(\string $jid, \string $worker, \string $group, \string $message, \string $data = null)
- * @method string[] jobs(\string $state, \int $offset = 0, \int $count = 25)
- * @method string get(\string $jid)
+ * @method int retry() retry(string $jid, string $queue, string $worker, int $delay, string $group, string $message)
+ * @method int cancel() cancel(string $jid)
+ * @method int unrecur() unrecur(string $jid)
+ * @method int fail() fail(string $jid, string $worker, string $group, string $message, string $data = null)
+ * @method string[] jobs(string $state, int $offset = 0, int $count = 25)
+ * @method string get(string $jid)
  * @method string[] multiget(array $jids)
- * @method bool complete(\string $jid, \string $worker_name, \string $queue_name, array $data)
- * @method void timeout(\string $jid)
- * @method array failed(\string $group = false, \int $start = 0, \int $limit = 25)
- * @method string[] tag(\string $op, $tags)
+ * @method bool complete(string $jid, string $worker_name, string $queue_name, string $data)
+ * @method void timeout(string $jid)
+ * @method string failed(string $group = false, int $start = 0, int $limit = 25)
+ * @method string[] tag(string $op, $tags)
+ * @method array stats(string $name, int $date = null)
+ * @method bool paused(string $name)
+ * @method void pause(string $name)
+ * @method void unpause(string $name)
  *
  * @property-read Jobs jobs
  */
@@ -42,10 +43,12 @@ class Client
      * @internal
      */
     public $lua;
+
     /**
      * @var Config
      */
     public $config;
+
     /**
      * @var array
      */
@@ -94,38 +97,34 @@ class Client
         return new Listener($this->redis, $channels);
     }
 
-    /**
-     * Used for testing
-     *
-     * @param string $luaClass
-     *
-     * @internal
-     */
-    public function setLuaClass($luaClass) {
-        $this->lua = new $luaClass($this->redis);
-    }
-
-    function __call($command, $arguments) {
+    public function __call($command, $arguments) {
         return $this->lua->run($command, $arguments);
     }
 
-    function __get($prop) {
-        if ($prop === 'jobs') return $this->_jobs;
+    public function __get($prop) {
+        if ($prop === 'jobs') {
+            return $this->_jobs;
+        }
 
         return null;
     }
 
+    public function __set($name, $value) {
+    }
+
+    public function __isset($name) {
+        return false;
+    }
+
     /**
-     * Call a specific q-less command
+     * Call a specific qless command
      *
      * @param string $command
-     * @param mixed  $arguments ...
+     * @param array  $arguments ...
      *
      * @return mixed
      */
-    public function call($command, $arguments) {
-        $arguments = func_get_args();
-        array_shift($arguments);
+    public function call($command, ...$arguments) {
         return $this->lua->run($command, $arguments);
     }
 

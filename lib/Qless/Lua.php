@@ -5,10 +5,7 @@ namespace Qless;
 require_once __DIR__ . '/QlessException.php';
 
 /**
- * Class Lua
- * wrapper to load and execute lua script for qless-core.
- *
- * @package Qless
+ * Wrapper to load and execute lua script for qless-core.
  */
 class Lua
 {
@@ -16,18 +13,21 @@ class Lua
      * @var \Redis
      */
     protected $redisCli;
+
     /**
      * @var string
      */
-    protected $redisHost;
+    private $redisHost;
+
     /**
      * @var int
      */
-    protected $redisPort;
+    private $redisPort;
+
     /**
      * @var string
      */
-    protected $sha = null;
+    protected $sha;
 
     public function __construct($redis) {
         $this->redisHost = $redis['host'];
@@ -44,8 +44,7 @@ class Lua
         $luaArgs  = [$command, microtime(true)];
         $argArray = array_merge($luaArgs, $args);
         $result   = $this->redisCli->evalSha($this->sha, $argArray);
-        $error    = $this->redisCli->getLastError();
-        if ($error) {
+        if ($error = $this->redisCli->getLastError()) {
             $this->handleError($error);
             return null;
         }
@@ -53,6 +52,11 @@ class Lua
         return $result;
     }
 
+    /**
+     * @param $error
+     *
+     * @throws QlessException
+     */
     protected function handleError($error) {
         $this->redisCli->clearLastError();
         throw QlessException::createExceptionFromError($error);

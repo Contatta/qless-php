@@ -14,6 +14,7 @@ class Queue
      * @var Client
      */
     private $client;
+
     /**
      * @var string
      */
@@ -70,8 +71,8 @@ class Queue
     /**
      * Get the next job on this queue.
      *
-     * @param     $worker  worker name popping the job.
-     * @param int $numJobs number of jobs to pop off of the queue
+     * @param string $worker  worker name popping the job.
+     * @param int    $numJobs number of jobs to pop off of the queue
      *
      * @return Job[]
      */
@@ -155,19 +156,19 @@ class Queue
         return $this->client->length($this->name);
     }
 
-    function __get($name) {
+    public function __get($name) {
         switch ($name) {
         case 'heartbeat':
             $cfg = $this->client->config;
 
-            return intval($cfg->get("{$this->name}-heartbeat", $cfg->get('heartbeat', 60)));
+            return (int)$cfg->get("{$this->name}-heartbeat", $cfg->get('heartbeat', 60));
 
         default:
             throw new \InvalidArgumentException("Undefined property '$name'");
         }
     }
 
-    function __set($name, $value) {
+    public function __set($name, $value) {
         switch ($name) {
         case 'heartbeat':
             if (!is_int($value)) {
@@ -183,7 +184,7 @@ class Queue
         }
     }
 
-    function __unset($name) {
+    public function __unset($name) {
         switch ($name) {
         case 'heartbeat':
             $this->client->config->clear("{$this->name}-heartbeat");
@@ -231,7 +232,7 @@ class Queue
         return $this->client->paused($this->name) === 1;
     }
 
-    function __toString() {
+    public function __toString() {
         return $this->name;
     }
 }

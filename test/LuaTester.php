@@ -13,8 +13,7 @@ class LuaTester extends \Qless\Lua
         $luaArgs  = [$command, $this->time];
         $argArray = array_merge($luaArgs, $args);
         $result   = $this->redisCli->evalSha($this->sha, $argArray);
-        $error    = $this->redisCli->getLastError();
-        if ($error) {
+        if ($error = $this->redisCli->getLastError()) {
             $this->handleError($error);
             return null;
         }

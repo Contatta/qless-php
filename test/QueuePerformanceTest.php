@@ -12,7 +12,7 @@ class QueuePerformanceTest extends QlessTest
     public function testPerfPuttingJobs() {
         $queue = new Qless\Queue('testQueue', $this->client);
         $cb    = $this->getProfilerForCallback(function ($e) use ($queue) {
-            $queue->put("Sample\\TestWorkerImpl", $e, []);
+            $queue->put(TestWorkerImpl::class, $e, []);
         });
 
         $cb(self::TEST_TIME, __METHOD__);
@@ -21,7 +21,7 @@ class QueuePerformanceTest extends QlessTest
     public function testPerfPuttingThenPoppingJobs() {
         $queue = new Qless\Queue('testQueue', $this->client);
         $cb    = $this->getProfilerForCallback(function ($e) use ($queue) {
-            $queue->put("Sample\\TestWorkerImpl", $e, []);
+            $queue->put(TestWorkerImpl::class, $e, []);
         });
 
         $cb(self::TEST_TIME, __METHOD__);
@@ -52,7 +52,7 @@ class QueuePerformanceTest extends QlessTest
         $cb(self::TEST_TIME, __METHOD__);
     }
 
-    protected function getProfilerForCallback(\Closure $cb) {
+    private function getProfilerForCallback(\Closure $cb) {
         return function ($time, $message = '') use ($cb) {
             $s = microtime(true);
             $e = microtime(true) - $s;

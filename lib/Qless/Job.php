@@ -6,23 +6,50 @@ require_once __DIR__ . '/QlessException.php';
 
 class Job
 {
+    /**
+     * @var string
+     */
     private $jid;
+
+    /**
+     * @var array
+     */
     private $data;
+
     /**
      * @var Client
      */
     private $client;
+
+    /**
+     * @var string
+     */
     private $queue_name;
+
+    /**
+     * @var string
+     */
     private $klass_name;
+
     /**
      * @var string
      */
     private $worker_name;
+
+    /**
+     * @var string
+     */
     private $instance;
+
     /**
      * @var float
      */
     private $expires;
+
+    /**
+     * @var int
+     */
+    private $priority;
 
     /**
      * @var string[]
@@ -120,7 +147,7 @@ class Job
      * @return float
      */
     public function getInterval() {
-        return floatval($this->job_data['interval']);
+        return (float)$this->job_data['interval'];
     }
 
     /**
@@ -189,23 +216,23 @@ class Job
     /**
      * Add the specified tags to this job
      *
-     * @param string $tags ... list of tags to remove from this job
+     * @param string[] $tags ... list of tags to remove from this job
      *
      * @return string[] the new list of tags
      */
-    public function tag($tags) {
-        $tags       = func_get_args();
-        $this->tags = json_decode(call_user_func_array([$this->client, 'call'], array_merge(['tag', 'add', $this->jid], $tags)), true);
+    public function tag(...$tags) {
+        return $this->tags = json_decode(call_user_func_array([$this->client, 'call'], array_merge(['tag', 'add', $this->jid], $tags)), true);
     }
 
     /**
      * Remove the specified tags to this job
      *
-     * @param string $tags ... list of tags to add to this job
+     * @param string[] $tags ... list of tags to add to this job
+     *
+     * @return string[] the new list of tags
      */
-    public function untag($tags) {
-        $tags       = func_get_args();
-        $this->tags = json_decode(call_user_func_array([$this->client, 'call'], array_merge(['tag', 'remove', $this->jid], $tags)), true);
+    public function untag(...$tags) {
+        return $this->tags = json_decode(call_user_func_array([$this->client, 'call'], array_merge(['tag', 'remove', $this->jid], $tags)), true);
     }
 
     /**
@@ -274,7 +301,7 @@ class Job
             'retries', $opts['retries'],
             'depends', json_encode($opts['depends'], JSON_UNESCAPED_SLASHES),
             'resources', json_encode($opts['resources'], JSON_UNESCAPED_SLASHES),
-            'interval', floatval($opts['interval']));
+            'interval', (float)$opts['interval']);
     }
 
     /**
@@ -297,9 +324,8 @@ class Job
     }
 
     /**
-     * @param bool|null $data
+     * @param array|string|bool|null $data
      *
-     * @throws QlessException If the heartbeat fails
      * @return int timestamp of the heartbeat
      */
     public function heartbeat($data = null) {
@@ -322,27 +348,19 @@ class Job
         if ($dependents && !empty($this->job_data['dependents'])) {
             return call_user_func_array([$this->client, 'cancel'], array_merge([$this->jid], $this->job_data['dependents']));
         }
+
         return $this->client->cancel($this->jid);
     }
 
     /**
      * Creates the instance to perform the job and calls the method on the Instance specified in the payload['performMethod'];
-     * @return bool
      */
     public function perform() {
-        try {
-            $instance = $this->getInstance();
+        $instance = $this->getInstance();
 
-            $performMethod = $this->data['performMethod'];
+        $performMethod = $this->data['performMethod'];
 
-            $instance->$performMethod($this);
-        } catch (\Exception $e) {
-            $this->fail('system:fatal', $e->getMessage());
-
-            return false;
-        }
-
-        return true;
+        $instance->$performMethod($this);
     }
 
     /**
@@ -372,7 +390,7 @@ class Job
      * @throws \Exception
      */
     public function getInstance() {
-        if (!is_null($this->instance)) {
+        if ($this->instance !== null) {
             return $this->instance;
         }
 
@@ -384,8 +402,6 @@ class Job
             throw new \Exception('Job class ' . $this->klass_name . ' does not contain perform method ' . $this->data['performMethod']);
         }
 
-        $this->instance = new $this->klass_name;
-
-        return $this->instance;
+        return $this->instance = new $this->klass_name;;
     }
 }

@@ -44,7 +44,9 @@ class Jobs implements \ArrayAccess
      * @return array|Job[]
      */
     public function multiget($jids) {
-        if (empty($jids)) return [];
+        if (empty($jids)) {
+            return [];
+        }
 
         $results = call_user_func_array([$this->client, 'multiget'], $jids);
         $jobs    = json_decode($results, true);
@@ -60,9 +62,9 @@ class Jobs implements \ArrayAccess
     /**
      * Fetches a report of failed jobs for the specified group
      *
-     * @param bool $group
-     * @param int  $start
-     * @param int  $limit
+     * @param string $group
+     * @param int    $start
+     * @param int    $limit
      *
      * @return \Iterator|Job[]
      */
@@ -84,41 +86,27 @@ class Jobs implements \ArrayAccess
         return json_decode($this->client->failed(), true);
     }
 
-    #region ArrayAccess
-
-    /**
-     * @inheritdoc
-     */
     public function offsetExists($jid) {
         return $this->client->get($jid) !== false;
     }
 
-    /**
-     * @inheritdoc
-     */
     public function offsetGet($jid) {
         $job_data = $this->client->get($jid);
         if ($job_data === false) {
             $job_data = $this->client->{'recur.get'}($jid);
-            if ($job_data === false) return null;
+            if ($job_data === false) {
+                return null;
+            }
         }
 
         return new Job($this->client, json_decode($job_data, true));
     }
 
-    /**
-     * @inheritdoc
-     */
     public function offsetSet($offset, $value) {
         throw new \LogicException('set not supported');
     }
 
-    /**
-     * @inheritdoc
-     */
     public function offsetUnset($offset) {
         throw new \LogicException('unset not supported');
     }
-
-    #endregion
 }

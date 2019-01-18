@@ -10,8 +10,8 @@ require_once __DIR__ . '/LuaTester.php';
  */
 abstract class QlessTest extends \PHPUnit\Framework\TestCase
 {
-    static $REDIS_HOST;
-    static $REDIS_PORT;
+    protected static $REDIS_HOST;
+    protected static $REDIS_PORT;
 
     public static function setUpBeforeClass() {
         self::$REDIS_HOST = getenv('REDIS_HOST') ?: 'localhost';

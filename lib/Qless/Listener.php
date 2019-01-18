@@ -4,6 +4,9 @@ namespace Qless;
 
 class Listener
 {
+    /**
+     * @var \Redis
+     */
     private $redis;
 
     /**
@@ -25,7 +28,7 @@ class Listener
      */
     public function messages(callable $callback) {
         $this->redis->subscribe($this->channels, function (\Redis $redis, $channel, $data) use ($callback) {
-            call_user_func($callback, $channel, json_decode($data));
+            $callback($channel, json_decode($data));
         });
     }
 

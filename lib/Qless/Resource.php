@@ -21,7 +21,7 @@ class Resource
      */
     private $max;
 
-    function __construct(Client $client, $name) {
+    public function __construct(Client $client, $name) {
         $this->client = $client;
         $this->name   = $name;
     }
@@ -77,13 +77,9 @@ class Resource
      * Deletes this resource
      *
      * @return bool true if resource was deleted
-     *
-     * @throws QlessException
      */
     public function delete() {
-        $res = $this->client->lua->run('resource.unset', [$this->name]) === 1;
-
-        return $res;
+        return $this->client->lua->run('resource.unset', [$this->name]) === 1;
     }
 
     /**
