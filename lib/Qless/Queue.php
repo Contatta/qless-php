@@ -51,7 +51,8 @@ class Queue
      * @return string|float the job identifier or the time remaining before the job expires if the job is already running
      */
     public function put($klass, $jid, $data, $delay = 0, $retries = 5, $replace = true, $priority = 0, $resources = [], $interval = 0.0, $tags = [], $depends = []) {
-        return $this->client->put(null,
+        return $this->client->put(
+            null,
             $this->name,
             $jid ?: Qless::guidv4(),
             $klass,
@@ -63,27 +64,25 @@ class Queue
             'depends', json_encode($depends, JSON_UNESCAPED_SLASHES),
             'resources', json_encode($resources, JSON_UNESCAPED_SLASHES),
             'replace', $replace ? 1 : 0,
-            'interval', $interval
-        );
+            'interval', $interval);
     }
 
     /**
      * Get the next job on this queue.
      *
-     * @param     $worker - worker name popping the job.
-     * @param int $numJobs - number of jobs to pop off of the queue
+     * @param     $worker  worker name popping the job.
+     * @param int $numJobs number of jobs to pop off of the queue
      *
      * @return Job[]
      */
     public function pop($worker, $numJobs = 1) {
-        $results = $this->client
-            ->pop($this->name, $worker, $numJobs);
+        $results = $this->client->pop($this->name, $worker, $numJobs);
 
         $jobs = json_decode($results, true);
 
         $returnJobs = [];
         if (!empty($jobs)) {
-            foreach($jobs as $job_data) {
+            foreach ($jobs as $job_data) {
                 $returnJobs[] = new Job($this->client, $job_data);
             }
         }
@@ -101,12 +100,12 @@ class Queue
      * @param string $klass     The class with the 'performMethod' specified in the data.
      * @param string $jid       specified job id, if false is specified, a jid will be generated.
      * @param mixed  $data      array of parameters for job.
-     * @param int   $interval   The recurring interval in seconds.
-     * @param int   $offset     A delay before the first run in seconds.
-     * @param int   $retries    Number of times the job can retry when it runs.
-     * @param int   $priority   a negative priority will run sooner.
-     * @param array $resources  array of resource identifiers this job must acquire before being processed
-     * @param array $tags       array of tags to add to the job.
+     * @param int    $interval  The recurring interval in seconds.
+     * @param int    $offset    A delay before the first run in seconds.
+     * @param int    $retries   Number of times the job can retry when it runs.
+     * @param int    $priority  a negative priority will run sooner.
+     * @param array  $resources array of resource identifiers this job must acquire before being processed
+     * @param array  $tags      array of tags to add to the job.
      *
      * @return mixed
      */
@@ -122,10 +121,8 @@ class Queue
             'priority', $priority,
             'tags', json_encode($tags, JSON_UNESCAPED_SLASHES),
             'retries', $retries,
-            'resources', json_encode($resources, JSON_UNESCAPED_SLASHES)
-        );
+            'resources', json_encode($resources, JSON_UNESCAPED_SLASHES));
     }
-
 
     /**
      * Cancels a job using the specified identifier
@@ -160,45 +157,41 @@ class Queue
 
     function __get($name) {
         switch ($name) {
-            case 'heartbeat':
-                $cfg = $this->client->config;
+        case 'heartbeat':
+            $cfg = $this->client->config;
 
-                return intval($cfg->get("{$this->name}-heartbeat", $cfg->get('heartbeat', 60)));
+            return intval($cfg->get("{$this->name}-heartbeat", $cfg->get('heartbeat', 60)));
 
-            default:
-                throw new \InvalidArgumentException("Undefined property '$name'");
+        default:
+            throw new \InvalidArgumentException("Undefined property '$name'");
         }
     }
 
     function __set($name, $value) {
         switch ($name) {
-            case 'heartbeat':
-                if (!is_int($value)) {
-                    throw new \InvalidArgumentException('heartbeat must be an int');
-                }
+        case 'heartbeat':
+            if (!is_int($value)) {
+                throw new \InvalidArgumentException('heartbeat must be an int');
+            }
 
-                $this->client
-                    ->config
-                    ->set("{$this->name}-heartbeat", $value);
+            $this->client->config->set("{$this->name}-heartbeat", $value);
 
-                break;
+            break;
 
-            default:
-                throw new \InvalidArgumentException("Undefined property '$name'");
+        default:
+            throw new \InvalidArgumentException("Undefined property '$name'");
         }
     }
 
     function __unset($name) {
         switch ($name) {
-            case 'heartbeat':
-                $this->client
-                    ->config
-                    ->clear("{$this->name}-heartbeat");
+        case 'heartbeat':
+            $this->client->config->clear("{$this->name}-heartbeat");
 
-                break;
+            break;
 
-            default:
-                throw new \InvalidArgumentException("Undefined property '$name'");
+        default:
+            throw new \InvalidArgumentException("Undefined property '$name'");
         }
     }
 
@@ -210,7 +203,7 @@ class Queue
      * @return array
      */
     public function stats($date = null) {
-        $date = $date ? : time();
+        $date = $date ?: time();
 
         return $this->client->stats($this->name, $date);
     }
@@ -241,6 +234,4 @@ class Queue
     function __toString() {
         return $this->name;
     }
-
-
 }

@@ -8,5 +8,4 @@ Worker
 
 TODO
 
-See `demo/handlerWorker.php` for a simple example 
-
+See `demo/handlerWorker.php` for a simple example

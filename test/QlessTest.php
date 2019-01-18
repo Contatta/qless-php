@@ -8,8 +8,8 @@ require_once __DIR__ . '/LuaTester.php';
 /**
  * Base class for qless-php testing
  */
-class QlessTest extends PHPUnit_Framework_TestCase {
-
+abstract class QlessTest extends \PHPUnit\Framework\TestCase
+{
     static $REDIS_HOST;
     static $REDIS_PORT;
 
@@ -31,4 +31,3 @@ class QlessTest extends PHPUnit_Framework_TestCase {
         $this->client->lua->flush();
     }
 }
- 

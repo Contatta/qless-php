@@ -4,7 +4,6 @@ require_once __DIR__ . '/QlessTest.php';
 
 class JobsTest extends QlessTest
 {
-
     public function testItReturnsNullForInvalidJobID() {
         $j = $this->client->jobs['xxx'];
 
@@ -40,7 +39,7 @@ class JobsTest extends QlessTest
     public function testItReturnsCompletedJobs() {
         $this->put('j-1');
         $this->put('j-2');
-        $q  = $this->client->getQueue('q-1');
+        $q = $this->client->getQueue('q-1');
         $q->pop('w-1')[0]->complete();
         $q->pop('w-1')[0]->complete();
 
@@ -54,7 +53,7 @@ class JobsTest extends QlessTest
         $this->put('j-2');
         $this->put('j-3');
         $this->put('j-4');
-        $q  = $this->client->getQueue('q-1');
+        $q = $this->client->getQueue('q-1');
         $q->pop('w-1')[0]->fail('system', 'msg');
         $q->pop('w-1')[0]->fail('system', 'msg');
         $q->pop('w-1')[0]->fail('system', 'msg');
@@ -73,7 +72,7 @@ class JobsTest extends QlessTest
         $this->put('j-2');
         $this->put('j-3');
         $this->put('j-4');
-        $q  = $this->client->getQueue('q-1');
+        $q = $this->client->getQueue('q-1');
         $q->pop('w-1')[0]->fail('system', 'msg');
         $q->pop('w-1')[0]->fail('system', 'msg');
         $q->pop('w-1')[0]->fail('system', 'msg');
@@ -88,7 +87,7 @@ class JobsTest extends QlessTest
         $this->put('j-1');
         $this->put('j-2');
 
-        $q  = $this->client->getQueue('q-1');
+        $q = $this->client->getQueue('q-1');
         $q->pop('w-1');
 
         $j = $this->client->jobs['j-1'];
@@ -96,16 +95,18 @@ class JobsTest extends QlessTest
     }
 
     private function put($jid, $opts = []) {
-        $opts = array_merge([
-            'data'     => [],
-            'delay'    => 0,
-            'tags'     => [],
-            'priority' => 0,
-            'retries'  => 0,
-            'interval' => 0,
-        ], $opts);
+        $opts = array_merge(
+            [
+                'data'     => [],
+                'delay'    => 0,
+                'tags'     => [],
+                'priority' => 0,
+                'retries'  => 0,
+                'interval' => 0,
+            ], $opts);
 
-        $this->client->put(null,
+        $this->client->put(
+            null,
             'q-1',
             $jid,
             'k',
@@ -114,8 +115,6 @@ class JobsTest extends QlessTest
             'tags', json_encode($opts['tags'], JSON_UNESCAPED_SLASHES),
             'priority', $opts['priority'],
             'retries', $opts['retries'],
-            'interval', $opts['interval']
-        );
+            'interval', $opts['interval']);
     }
 }
- 

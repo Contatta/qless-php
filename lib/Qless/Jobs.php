@@ -4,7 +4,6 @@ namespace Qless;
 
 class Jobs implements \ArrayAccess
 {
-
     /**
      * @var Client
      */
@@ -68,7 +67,7 @@ class Jobs implements \ArrayAccess
      * @return \Iterator|Job[]
      */
     public function failedForGroup($group, $start = 0, $limit = 25) {
-        $results         = json_decode($this->client->failed($group, $start, $limit), true);
+        $results = json_decode($this->client->failed($group, $start, $limit), true);
         if (!empty($results['jobs'])) {
             $results['jobs'] = $this->multiget($results['jobs']);
         }

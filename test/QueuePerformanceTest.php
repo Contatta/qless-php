@@ -5,13 +5,13 @@ require_once __DIR__ . '/QlessTest.php';
 /**
  * @group performance
  */
-class QueuePerformanceTest extends QlessTest {
-
+class QueuePerformanceTest extends QlessTest
+{
     const TEST_TIME = 2;
 
     public function testPerfPuttingJobs() {
-        $queue = new Qless\Queue("testQueue", $this->client);
-        $cb = $this->getProfilerForCallback(function ($e) use ($queue) {
+        $queue = new Qless\Queue('testQueue', $this->client);
+        $cb    = $this->getProfilerForCallback(function ($e) use ($queue) {
             $queue->put("Sample\\TestWorkerImpl", $e, []);
         });
 
@@ -19,8 +19,8 @@ class QueuePerformanceTest extends QlessTest {
     }
 
     public function testPerfPuttingThenPoppingJobs() {
-        $queue = new Qless\Queue("testQueue", $this->client);
-        $cb = $this->getProfilerForCallback(function ($e) use ($queue) {
+        $queue = new Qless\Queue('testQueue', $this->client);
+        $cb    = $this->getProfilerForCallback(function ($e) use ($queue) {
             $queue->put("Sample\\TestWorkerImpl", $e, []);
         });
 
@@ -33,7 +33,6 @@ class QueuePerformanceTest extends QlessTest {
     }
 
     public function testPerfDirectRedis() {
-
         $redis = new Redis();
         $redis->connect(self::$REDIS_HOST, self::$REDIS_PORT);
 
@@ -45,18 +44,16 @@ class QueuePerformanceTest extends QlessTest {
     }
 
     public function testPerfQueueLength() {
-
-        $queue = new Qless\Queue("testQueue", $this->client);
-        $cb = $this->getProfilerForCallback(function ($e) use ($queue) {
+        $queue = new Qless\Queue('testQueue', $this->client);
+        $cb    = $this->getProfilerForCallback(function ($e) use ($queue) {
             $queue->length();
         });
 
         $cb(self::TEST_TIME, __METHOD__);
-
     }
 
     protected function getProfilerForCallback(\Closure $cb) {
-        return function($time, $message='') use ($cb) {
+        return function ($time, $message = '') use ($cb) {
             $s = microtime(true);
             $e = microtime(true) - $s;
             $i = 0;
@@ -70,4 +67,3 @@ class QueuePerformanceTest extends QlessTest {
         };
     }
 }
- 

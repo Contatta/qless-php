@@ -4,7 +4,6 @@ namespace Qless;
 
 class Listener
 {
-
     private $redis;
 
     /**
@@ -16,7 +15,7 @@ class Listener
         $this->redis = new \Redis();
         $this->redis->connect($redisConfig['host'], $redisConfig['port']);
 
-        $this->channels  = $channels;
+        $this->channels = $channels;
     }
 
     /**

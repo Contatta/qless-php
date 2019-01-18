@@ -2,8 +2,8 @@
 
 require_once __DIR__ . '/QlessTest.php';
 
-class ConfigTest extends QlessTest {
-
+class ConfigTest extends QlessTest
+{
     public function testDefaultHeartbeat() {
         $val = $this->client->config->get('heartbeat');
         $this->assertEquals(60, $val);
@@ -38,4 +38,3 @@ class ConfigTest extends QlessTest {
         $this->assertNull($val);
     }
 }
- 

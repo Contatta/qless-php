@@ -2,8 +2,8 @@
 
 require_once __DIR__ . '/QlessTest.php';
 
-class ResourceTest extends QlessTest {
-
+class ResourceTest extends QlessTest
+{
     public function testResourceDoesNotExist() {
         $r = $this->client->getResource('test-resource');
 
@@ -89,14 +89,13 @@ class ResourceTest extends QlessTest {
 
     private function put($jid, $res) {
         $res = json_encode($res, JSON_UNESCAPED_SLASHES);
-        $this->client->put(null,
+        $this->client->put(
+            null,
             'q-1',
             $jid,
             'k',
             json_encode(null, JSON_UNESCAPED_UNICODE),
             0,
-            'resources', $res
-        );
+            'resources', $res);
     }
 }
- 

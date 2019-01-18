@@ -7,9 +7,6 @@ require_once __DIR__ . '/Config.php';
 require_once __DIR__ . '/Resource.php';
 require_once __DIR__ . '/Jobs.php';
 
-use Redis;
-
-
 /**
  * Class Client
  * client to call lua scripts in qless-core for specific commands
@@ -38,7 +35,6 @@ use Redis;
  */
 class Client
 {
-
     /**
      * Used for testing and internal use
      *
@@ -61,12 +57,12 @@ class Client
     private $_jobs;
 
     public function __construct($host = 'localhost', $port = 6379) {
-        $this->redis['host']  = $host;
-        $this->redis['port']  = $port;
+        $this->redis['host'] = $host;
+        $this->redis['port'] = $port;
 
         $this->lua    = new Lua($this->redis);
         $this->config = new Config($this);
-        $this->_jobs   = new Jobs($this);
+        $this->_jobs  = new Jobs($this);
     }
 
     /**
@@ -123,7 +119,7 @@ class Client
      * Call a specific q-less command
      *
      * @param string $command
-     * @param mixed  $arguments...
+     * @param mixed  $arguments ...
      *
      * @return mixed
      */
@@ -135,6 +131,7 @@ class Client
 
     /**
      * Returns
+     *
      * @param string $name name of queue
      *
      * @return Queue
@@ -169,4 +166,4 @@ class Client
     public function reconnect() {
         $this->lua->reconnect();
     }
-} 
+}

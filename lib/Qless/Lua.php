@@ -33,7 +33,7 @@ class Lua
         $this->redisHost = $redis['host'];
         $this->redisPort = $redis['port'];
 
-        $this->redisCli  = new \Redis();
+        $this->redisCli = new \Redis();
         $this->redisCli->connect($this->redisHost, $this->redisPort);
     }
 
@@ -43,8 +43,8 @@ class Lua
         }
         $luaArgs  = [$command, microtime(true)];
         $argArray = array_merge($luaArgs, $args);
-        $result = $this->redisCli->evalSha($this->sha, $argArray);
-        $error  = $this->redisCli->getLastError();
+        $result   = $this->redisCli->evalSha($this->sha, $argArray);
+        $error    = $this->redisCli->getLastError();
         if ($error) {
             $this->handleError($error);
             return null;
@@ -61,7 +61,7 @@ class Lua
     protected function reload() {
         $script    = file_get_contents(__DIR__ . '/qless-core/qless.lua', true);
         $this->sha = sha1($script);
-        $res = $this->redisCli->script('exists', $this->sha);
+        $res       = $this->redisCli->script('exists', $this->sha);
         if ($res[0] !== 1) {
             $this->sha = $this->redisCli->script('load', $script);
         }
@@ -83,4 +83,4 @@ class Lua
         $this->redisCli->close();
         $this->redisCli->connect($this->redisHost, $this->redisPort);
     }
-} 
+}

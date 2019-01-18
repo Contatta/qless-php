@@ -105,4 +105,4 @@ class Resource
         }
         return $this->max;
     }
-} 
+}

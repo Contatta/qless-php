@@ -6,7 +6,6 @@ require_once __DIR__ . '/Client.php';
 
 class Config
 {
-
     /**
      * @var Client
      */
@@ -48,4 +47,4 @@ class Config
     public function clear($name) {
         $this->client->lua->run('config.unset', [$name]);
     }
-} 
+}

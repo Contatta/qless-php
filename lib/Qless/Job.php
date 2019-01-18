@@ -6,7 +6,6 @@ require_once __DIR__ . '/QlessException.php';
 
 class Job
 {
-
     private $jid;
     private $data;
     /**
@@ -190,22 +189,22 @@ class Job
     /**
      * Add the specified tags to this job
      *
-     * @param string $tags... list of tags to remove from this job
+     * @param string $tags ... list of tags to remove from this job
      *
      * @return string[] the new list of tags
      */
     public function tag($tags) {
-        $tags = func_get_args();
+        $tags       = func_get_args();
         $this->tags = json_decode(call_user_func_array([$this->client, 'call'], array_merge(['tag', 'add', $this->jid], $tags)), true);
     }
 
     /**
      * Remove the specified tags to this job
      *
-     * @param string $tags... list of tags to add to this job
+     * @param string $tags ... list of tags to add to this job
      */
     public function untag($tags) {
-        $tags = func_get_args();
+        $tags       = func_get_args();
         $this->tags = json_decode(call_user_func_array([$this->client, 'call'], array_merge(['tag', 'remove', $this->jid], $tags)), true);
     }
 
@@ -225,13 +224,11 @@ class Job
      */
     public function complete() {
         $jsonData = json_encode($this->data, JSON_UNESCAPED_SLASHES);
-        return $this->client
-            ->complete($this->jid,
-                $this->worker_name,
-                $this->queue_name,
-                $jsonData
-            );
-
+        return $this->client->complete(
+            $this->jid,
+            $this->worker_name,
+            $this->queue_name,
+            $jsonData);
     }
 
     /**
@@ -248,9 +245,10 @@ class Job
      * * string[] resources replacement list of resource IDs required before this job can be processed
      *
      * @param array $opts optional values
+     *
      * @return string
      */
-    public function requeue($opts=[]) {
+    public function requeue($opts = []) {
         $opts = array_merge(
             [
                 'delay'     => 0,
@@ -260,26 +258,23 @@ class Job
                 'tags'      => $this->getTags(),
                 'depends'   => $this->getDependencies(),
                 'resources' => $this->getResources(),
-                'interval'  => $this->getInterval()
+                'interval'  => $this->getInterval(),
             ],
-            $opts
-        );
+            $opts);
 
-        return $this->client
-            ->requeue(
-                $this->worker_name,
-                $this->queue_name,
-                $this->jid,
-                $this->klass_name,
-                json_encode($opts['data'], JSON_UNESCAPED_SLASHES),
-                $opts['delay'],
-                'priority', $opts['priority'],
-                'tags', json_encode($opts['tags'], JSON_UNESCAPED_SLASHES),
-                'retries', $opts['retries'],
-                'depends', json_encode($opts['depends'], JSON_UNESCAPED_SLASHES),
-                'resources', json_encode($opts['resources'], JSON_UNESCAPED_SLASHES),
-                'interval', floatval($opts['interval'])
-            );
+        return $this->client->requeue(
+            $this->worker_name,
+            $this->queue_name,
+            $this->jid,
+            $this->klass_name,
+            json_encode($opts['data'], JSON_UNESCAPED_SLASHES),
+            $opts['delay'],
+            'priority', $opts['priority'],
+            'tags', json_encode($opts['tags'], JSON_UNESCAPED_SLASHES),
+            'retries', $opts['retries'],
+            'depends', json_encode($opts['depends'], JSON_UNESCAPED_SLASHES),
+            'resources', json_encode($opts['resources'], JSON_UNESCAPED_SLASHES),
+            'interval', floatval($opts['interval']));
     }
 
     /**
@@ -287,19 +282,18 @@ class Job
      *
      * @param string $group
      * @param string $message
-     * @param int $delay
+     * @param int    $delay
      *
      * @return int remaining retries available
      */
     public function retry($group, $message, $delay = 0) {
-        return $this->client
-            ->retry($this->jid,
-                $this->queue_name,
-                $this->worker_name,
-                $delay,
-                $group,
-                $message
-            );
+        return $this->client->retry(
+            $this->jid,
+            $this->queue_name,
+            $this->worker_name,
+            $delay,
+            $group,
+            $message);
     }
 
     /**
@@ -314,8 +308,7 @@ class Job
             $data = json_encode($data, JSON_UNESCAPED_SLASHES);
         }
 
-        return $this->expires = $this->client
-            ->heartbeat($this->jid, $this->worker_name, $data);
+        return $this->expires = $this->client->heartbeat($this->jid, $this->worker_name, $data);
     }
 
     /**
@@ -325,7 +318,7 @@ class Job
      *
      * @return int
      */
-    public function cancel($dependents=false) {
+    public function cancel($dependents = false) {
         if ($dependents && !empty($this->job_data['dependents'])) {
             return call_user_func_array([$this->client, 'cancel'], array_merge([$this->jid], $this->job_data['dependents']));
         }
@@ -337,14 +330,12 @@ class Job
      * @return bool
      */
     public function perform() {
-
         try {
             $instance = $this->getInstance();
 
             $performMethod = $this->data['performMethod'];
 
             $instance->$performMethod($this);
-
         } catch (\Exception $e) {
             $this->fail('system:fatal', $e->getMessage());
 
@@ -364,8 +355,7 @@ class Job
     public function fail($group, $message) {
         $jsonData = json_encode($this->data, JSON_UNESCAPED_SLASHES);
 
-        return $this->client
-            ->fail($this->jid, $this->worker_name, $group, $message, $jsonData);
+        return $this->client->fail($this->jid, $this->worker_name, $group, $message, $jsonData);
     }
 
     /**
@@ -387,20 +377,15 @@ class Job
         }
 
         if (!class_exists($this->klass_name)) {
-            throw new \Exception(
-                'Could not find job class ' . $this->klass_name . '.'
-            );
+            throw new \Exception('Could not find job class ' . $this->klass_name . '.');
         }
 
         if (!method_exists($this->klass_name, $this->data['performMethod'])) {
-            throw new \Exception(
-                'Job class ' . $this->klass_name . ' does not contain perform method ' . $this->data['performMethod']
-            );
+            throw new \Exception('Job class ' . $this->klass_name . ' does not contain perform method ' . $this->data['performMethod']);
         }
 
         $this->instance = new $this->klass_name;
 
         return $this->instance;
     }
-
-} 
+}
