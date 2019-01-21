@@ -69,7 +69,7 @@ class Worker
     /**
      * @var array
      */
-    private $logContext;
+    private $logCtx;
 
     /**
      * @var resource[]
@@ -124,16 +124,16 @@ class Worker
         declare(ticks=1);
 
         $this->masterRegisterSigHandlers();
-        $this->who        = 'master:' . $this->workerName;
-        $this->logContext = ['type' => $this->who, 'job_identifier' => null];
-        $this->logger->info('{type}: Worker started', $this->logContext);
-        $this->logger->info('{type}: monitoring the following queues (in order), {queues}', ['type' => $this->who, 'queues' => implode(', ', $this->queues)]);
+        $this->who    = "master:$this->workerName";
+        $queues       = implode(', ', $this->queues);
+        $this->logCtx = [];
+        $this->logger->info("[$this->who] worker started, monitoring queues $queues", $this->logCtx);
 
         $did_work = false;
 
         while (true) {
             if ($this->shutdown) {
-                $this->logger->info('{type}: Shutting down', $this->logContext);
+                $this->logger->info("[$this->who] shutting down", $this->logCtx);
                 break;
             }
 
@@ -142,8 +142,10 @@ class Worker
             }
 
             if ($did_work) {
-                $this->logger->debug('{type}: Looking for work', $this->logContext);
-                $this->updateProcLine('Waiting for ' . implode(',', $this->queues) . ' with interval ' . $this->interval);
+                $queues = implode(',', $this->queues);
+                $now    = strftime('%F %T');
+                $this->updateProcLine("Waiting for $queues with interval $this->interval since $now");
+                $this->logger->debug("[$this->who] waiting for work", $this->logCtx);
                 $did_work = false;
             }
 
@@ -156,17 +158,17 @@ class Worker
                 continue;
             }
 
-            $this->job                          = $job;
-            $this->logContext['job_identifier'] = $job->getId();
+            $this->job                      = $job;
+            $this->logCtx['job_identifier'] = $job->getId();
 
             // fork processes
             $this->childStart();
             $this->watchdogStart();
 
             // Parent process, sit and wait
-            $proc_line = 'Forked ' . $this->childPID . ' at ' . strftime('%F %T');
-            $this->updateProcLine($proc_line);
-            $this->logger->info($proc_line, $this->logContext);
+            $now = strftime('%F %T');
+            $this->updateProcLine("Forked $this->childPID at $now");
+            $this->logger->info("[$this->who] forked child", $this->logCtx);
 
             while ($this->childProcesses > 0) {
                 $status = null;
@@ -178,7 +180,7 @@ class Worker
                         $exited = $this->watchdogProcessStatus($status);
                     } else {
                         // unexpected?
-                        $this->logger->info(sprintf("master received status for unknown PID %d; exiting\n", $pid));
+                        $this->logger->info("[$this->who] received status for unknown PID $pid; exiting", $this->logCtx);
                         exit(1);
                     }
 
@@ -206,7 +208,7 @@ class Worker
             }
             $this->sockets = [];
             $this->job     = null;
-            unset($this->logContext['job_identifier']);
+            unset($this->logCtx['job_identifier']);
             $did_work = true;
 
             /**
@@ -228,8 +230,13 @@ class Worker
      */
     private function reserve() {
         foreach ($this->queues as $queue) {
-            if ($job = $queue->pop($this->workerName)) {
-                return $job[0];
+            try {
+                if ($job = $queue->pop($this->workerName)) {
+                    return $job[0];
+                }
+            } catch (QlessException $e) {
+                $error = $e->getMessage();
+                $this->logger->error("[$this->who] unable to reserve job on queue $queue: $error", $this->logCtx);
             }
         }
         return false;
@@ -286,7 +293,8 @@ class Worker
     private function fork(&$socket) {
         $pair = [];
         if (socket_create_pair(AF_UNIX, SOCK_STREAM, 0, $pair) === false) {
-            $this->logger->error('{type}: Unable to create socket pair; ' . socket_strerror(socket_last_error($pair[0])), $this->logContext);
+            $error = socket_strerror(socket_last_error($pair[0]));
+            $this->logger->error("[$this->who] unable to create socket pair: $error", $this->logCtx);
 
             exit(0);
         }
@@ -320,7 +328,7 @@ class Worker
                 return;
             }
 
-            $this->logger->debug('Sending error to master', $this->logContext);
+            $this->logger->debug("[$this->who] sending error to master", $this->logCtx);
             $data = serialize($error);
 
             while (($len = socket_write($socket, $data)) > 0) {
@@ -360,13 +368,13 @@ class Worker
         $child_type = $child_type === self::PROCESS_TYPE_JOB ? 'child' : 'watchdog';
 
         if ($exitStatus === 0) {
-            $this->logger->debug("{type}: {$child_type} process exited successfully", $this->logContext);
+            $this->logger->debug("[$this->who] $child_type process exited successfully", $this->logCtx);
 
             return false;
         }
 
-        $jobFailedMessage = $this->readErrorFromSocket($this->sockets[$PID]) ?: "{$child_type} process failed with status: {$exitStatus}";
-        $this->logger->error("{type}: fatal error in {$child_type} process: {$jobFailedMessage}", $this->logContext);
+        $jobFailedMessage = $this->readErrorFromSocket($this->sockets[$PID]) ?: "$child_type process failed with status: $exitStatus";
+        $this->logger->error("[$this->who] fatal error in $child_type process: $jobFailedMessage", $this->logCtx);
 
         return $jobFailedMessage;
     }
@@ -381,12 +389,12 @@ class Worker
 
         $this->clearSigHandlers();
 
-        $jid              = $this->job->getId();
-        $this->who        = 'child:' . $this->workerName;
-        $this->logContext = ['type' => $this->who];
-        $status           = 'Processing ' . $jid . ' since ' . strftime('%F %T');
-        $this->updateProcLine($status);
-        $this->logger->info($status, $this->logContext);
+        $jid          = $this->job->getId();
+        $now          = strftime('%F %T');
+        $this->who    = "child:$this->workerName";
+        $this->logCtx = ['job_identifier' => $jid];
+        $this->updateProcLine("Processing $jid since $now");
+        $this->logger->info("[$this->who] processing child", $this->logCtx);
         $this->childPerform($this->job);
 
         socket_close($socket);
@@ -407,10 +415,11 @@ class Worker
             } else {
                 $job->perform();
             }
-            $this->logger->notice('{type}: Job {job} has finished', ['job' => $job->getId(), 'type' => $this->who]);
+            $this->logger->notice("[$this->who] job finished", $this->logCtx);
         } catch (\Exception $e) {
-            $this->logger->critical('{type}: {job} has failed {stack}', ['job' => $job->getId(), 'stack' => $e->getMessage(), 'type' => $this->who]);
-            $job->fail('system:fatal', $e->getMessage());
+            $error = $e->getMessage();
+            $this->logger->critical("[$this->who] job failed: $error", $this->logCtx);
+            $job->fail('system:fatal', $error);
         }
     }
 
@@ -432,30 +441,25 @@ class Worker
         case pcntl_wifsignaled($status):
             $sig = pcntl_wtermsig($status);
             if ($sig !== SIGKILL) {
-                $this->childProcessUnhandledSignal($sig);
+                $sig = pcntl_sig_name($sig);
+                $this->logger->warning("[$this->who] child $this->childPID terminated with unhandled signal $sig", $this->logCtx);
             }
             return true;
 
         case pcntl_wifstopped($status):
-            $sig = pcntl_wstopsig($status);
-            $this->logger->info(sprintf("child %d was stopped with signal %s\n", $this->childPID, pcntl_sig_name($sig)));
+            $sig = pcntl_sig_name(pcntl_wstopsig($status));
+            $this->logger->info("[$this->who] child $this->childPID stopped with signal $sig", $this->logCtx);
             return false;
 
         default:
-            $this->logger->error(sprintf("unexpected status for child %d; exiting\n", $this->childPID));
+            $this->logger->error("[$this->who] unexpected status for child $this->childPID; exiting", $this->logCtx);
             exit(1);
         }
     }
 
-    private function childProcessUnhandledSignal($sig) {
-        $context           = $this->logContext;
-        $context['signal'] = pcntl_sig_name($sig);
-        $this->logger->notice("{type}: child terminated with unhandled signal '{signal}'", $context);
-    }
-
     private function childKill() {
         if ($this->childPID) {
-            $this->logger->info('{type}: Killing child at {child}', ['child' => $this->childPID, 'type' => $this->who]);
+            $this->logger->info("[$this->who] killing child $this->childPID", $this->logCtx);
             if (pcntl_waitpid($this->childPID, $status, WNOHANG) !== -1) {
                 posix_kill($this->childPID, SIGKILL);
             }
@@ -473,12 +477,12 @@ class Worker
 
         $this->clearSigHandlers();
 
-        $jid              = $this->job->getId();
-        $this->who        = 'watchdog:' . $this->workerName;
-        $this->logContext = ['type' => $this->who];
-        $status           = 'watching events for ' . $jid . ' since ' . strftime('%F %T');
-        $this->updateProcLine($status);
-        $this->logger->info($status, $this->logContext);
+        $jid          = $this->job->getId();
+        $now          = strftime('%F %T');
+        $this->who    = "watchdog:$this->workerName";
+        $this->logCtx = ['job_identifier' => $jid];
+        $this->updateProcLine("Watching events for $jid since $now");
+        $this->logger->info("[$this->who] watching events", $this->logCtx);
 
         ini_set('default_socket_timeout', -1);
         $l = $this->client->createListener(['ql:log']);
@@ -490,7 +494,7 @@ class Worker
             switch ($event->event) {
             case 'lock_lost':
                 if ($event->worker === $this->workerName) {
-                    $this->logger->info("{type}: sending SIGKILL to child {$this->childPID}; job handed out to another worker", $this->logContext);
+                    $this->logger->info("[$this->who] job handed to another worker; killing child $this->childPID", $this->logCtx);
                     posix_kill($this->childPID, SIGKILL);
                     $l->stop();
                 }
@@ -498,7 +502,7 @@ class Worker
 
             case 'canceled':
                 if ($event->worker === $this->workerName) {
-                    $this->logger->info("{type}: sending SIGKILL to child {$this->childPID}; job canceled", $this->logContext);
+                    $this->logger->info("[$this->who] job canceled; killing child $this->childPID", $this->logCtx);
                     posix_kill($this->childPID, SIGKILL);
                     $l->stop();
                 }
@@ -512,7 +516,7 @@ class Worker
         });
 
         socket_close($socket);
-        $this->logger->info('{type}: done', $this->logContext);
+        $this->logger->info("[$this->who] watchdog done", $this->logCtx);
 
         exit(0);
     }
@@ -532,24 +536,25 @@ class Worker
         case pcntl_wifsignaled($status):
             $sig = pcntl_wtermsig($status);
             if ($sig !== SIGKILL) {
-                $this->logger->warning(sprintf("watchdog %d terminated with unhandled signal %s\n", $this->watchdogPID, pcntl_sig_name($sig)));
+                $sig = pcntl_sig_name($sig);
+                $this->logger->warning("[$this->who] watchdog $this->watchdogPID terminated with unhandled signal $sig", $this->logCtx);
             }
             return true;
 
         case pcntl_wifstopped($status):
-            $sig = pcntl_wstopsig($status);
-            $this->logger->warning(sprintf("watchdog %d was stopped with signal %s\n", $this->watchdogPID, pcntl_sig_name($sig)));
+            $sig = pcntl_sig_name(pcntl_wstopsig($status));
+            $this->logger->info("[$this->who] watchdog $this->watchdogPID stopped with signal $sig", $this->logCtx);
             return false;
 
         default:
-            $this->logger->error(sprintf("unexpected status for watchdog %d; exiting\n", $this->childPID));
+            $this->logger->error("[$this->who] unexpected status for watchdog $this->watchdogPID; exiting", $this->logCtx);
             exit(1);
         }
     }
 
     private function watchdogKill() {
         if ($this->watchdogPID) {
-            $this->logger->info('{type}: Killing watchdog at {child}', ['child' => $this->watchdogPID, 'type' => $this->who]);
+            $this->logger->info("[$this->who] killing watchdog $this->watchdogPID", $this->logCtx);
             if (pcntl_waitpid($this->watchdogPID, $status, WNOHANG) !== -1) {
                 posix_kill($this->watchdogPID, SIGKILL);
             }
@@ -561,7 +566,7 @@ class Worker
      * Signal handler callback for USR2, pauses processing of new jobs.
      */
     public function pauseProcessing() {
-        $this->logger->notice('{type}: USR2 received; pausing job processing', $this->logContext);
+        $this->logger->notice("[$this->who] USR2 received; pausing job processing", $this->logCtx);
         $this->paused = true;
     }
 
@@ -570,7 +575,7 @@ class Worker
      * up new jobs.
      */
     public function unPauseProcessing() {
-        $this->logger->notice('{type}: CONT received; resuming job processing', $this->logContext);
+        $this->logger->notice("[$this->who] CONT received; resuming job processing", $this->logCtx);
         $this->paused = false;
     }
 
@@ -580,9 +585,9 @@ class Worker
      */
     public function shutdown() {
         if ($this->childPID) {
-            $this->logger->notice('{type}: QUIT received; shutting down after child completes work', $this->logContext);
+            $this->logger->notice("[$this->who] QUIT received; shutting down after child completes work", $this->logCtx);
         } else {
-            $this->logger->notice('{type}: QUIT received; shutting down', $this->logContext);
+            $this->logger->notice("[$this->who] QUIT received; shutting down", $this->logCtx);
         }
         $this->shutdown = true;
     }
@@ -592,7 +597,7 @@ class Worker
      * currently running.
      */
     public function shutdownNow() {
-        $this->logger->notice('{type}: TERM or INT received; shutting down immediately', $this->logContext);
+        $this->logger->notice("[$this->who] TERM or INT received; shutting down immediately", $this->logCtx);
         $this->shutdown = true;
         $this->killChildren();
     }
