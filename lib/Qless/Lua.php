@@ -68,6 +68,10 @@ class Lua
         $res       = $this->redisCli->script('exists', $this->sha);
         if ($res[0] !== 1) {
             $this->sha = $this->redisCli->script('load', $script);
+            if (!$this->sha) {
+                $error = $this->redisCli->getLastError();
+                $this->handleError($error);
+            }
         }
     }
 
