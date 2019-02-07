@@ -160,6 +160,7 @@ class Worker
 
             $this->job                      = $job;
             $this->logCtx['job_identifier'] = $job->getId();
+            $this->logCtx['job_queue']      = $job->getQueueName();
 
             // fork processes
             $this->childStart();
@@ -208,7 +209,7 @@ class Worker
             }
             $this->sockets = [];
             $this->job     = null;
-            unset($this->logCtx['job_identifier']);
+            unset($this->logCtx['job_identifier'], $this->logCtx['job_queue']);
             $did_work = true;
 
             /**
@@ -392,7 +393,7 @@ class Worker
         $jid          = $this->job->getId();
         $now          = strftime('%F %T');
         $this->who    = "child:$this->workerName";
-        $this->logCtx = ['job_identifier' => $jid];
+        $this->logCtx = ['job_identifier' => $jid, 'job_queue' => $this->job->getQueueName()];
         $this->updateProcLine("Processing $jid since $now");
         $this->logger->info("[$this->who] processing child", $this->logCtx);
         $this->childPerform($this->job);
@@ -480,7 +481,7 @@ class Worker
         $jid          = $this->job->getId();
         $now          = strftime('%F %T');
         $this->who    = "watchdog:$this->workerName";
-        $this->logCtx = ['job_identifier' => $jid];
+        $this->logCtx = ['job_identifier' => $jid, 'job_queue' => $this->job->getQueueName()];
         $this->updateProcLine("Watching events for $jid since $now");
         $this->logger->info("[$this->who] watching events", $this->logCtx);
 
