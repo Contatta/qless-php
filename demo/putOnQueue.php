@@ -5,7 +5,7 @@ require_once '../lib/Qless/Queue.php';
 require_once '../lib/Qless/Client.php';
 require_once 'TestWorkerImpl.php';
 
-$client = new Qless\Client('localhost', 6380);
+$client = new Qless\Client();
 $queue  = new Qless\Queue('testQueue1', $client);
 $queue2 = new Qless\Queue('testQueue2', $client);
 

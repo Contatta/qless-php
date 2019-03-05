@@ -59,9 +59,10 @@ class Client
      */
     private $_jobs;
 
-    public function __construct($host = 'localhost', $port = 6379) {
+    public function __construct($host = 'localhost', $port = 6379, $db = 0) {
         $this->redis['host'] = $host;
         $this->redis['port'] = $port;
+        $this->redis['db']   = $db;
 
         $this->lua    = new Lua($this->redis);
         $this->config = new Config($this);
@@ -84,6 +85,15 @@ class Client
      */
     public function getRedisPort() {
         return $this->redis['port'];
+    }
+
+    /**
+     * Return the DB for the Redis server
+     *
+     * @return int
+     */
+    public function getRedisDb() {
+        return $this->redis['db'];
     }
 
     /**

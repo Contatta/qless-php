@@ -12,10 +12,12 @@ abstract class QlessTest extends \PHPUnit\Framework\TestCase
 {
     protected static $REDIS_HOST;
     protected static $REDIS_PORT;
+    protected static $REDIS_DB;
 
     public static function setUpBeforeClass() {
         self::$REDIS_HOST = getenv('REDIS_HOST') ?: 'localhost';
         self::$REDIS_PORT = getenv('REDIS_PORT') ?: 6379;
+        self::$REDIS_DB   = getenv('REDIS_DB') ?: 0;
     }
 
     /**
@@ -24,7 +26,7 @@ abstract class QlessTest extends \PHPUnit\Framework\TestCase
     protected $client;
 
     public function setUp() {
-        $this->client = new Qless\Client(self::$REDIS_HOST, self::$REDIS_PORT);
+        $this->client = new Qless\Client(self::$REDIS_HOST, self::$REDIS_PORT, self::$REDIS_DB);
     }
 
     public function tearDown() {

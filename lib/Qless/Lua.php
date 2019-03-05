@@ -25,6 +25,11 @@ class Lua
     private $redisPort;
 
     /**
+     * @var int
+     */
+    private $redisDb;
+
+    /**
      * @var string
      */
     protected $sha;
@@ -32,9 +37,11 @@ class Lua
     public function __construct($redis) {
         $this->redisHost = $redis['host'];
         $this->redisPort = $redis['port'];
+        $this->redisDb   = $redis['db'];
 
         $this->redisCli = new \Redis();
         $this->redisCli->connect($this->redisHost, $this->redisPort);
+        $this->redisCli->select($this->redisDb);
     }
 
     public function run($command, $args) {
@@ -90,5 +97,6 @@ class Lua
     public function reconnect() {
         $this->redisCli->close();
         $this->redisCli->connect($this->redisHost, $this->redisPort);
+        $this->redisCli->select($this->redisDb);
     }
 }
