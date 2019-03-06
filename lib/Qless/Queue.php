@@ -201,8 +201,7 @@ class Queue
      */
     public function stats($date = null) {
         $date = $date ?: time();
-
-        return $this->client->stats($this->name, $date);
+        return json_decode($this->client->stats($this->name, $date), true);
     }
 
     /**
