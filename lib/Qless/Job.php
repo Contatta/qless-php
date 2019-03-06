@@ -12,7 +12,7 @@ class Job
     private $jid;
 
     /**
-     * @var array
+     * @var mixed
      */
     private $data;
 
@@ -216,23 +216,23 @@ class Job
     /**
      * Add the specified tags to this job
      *
-     * @param string[] $tags ... list of tags to remove from this job
+     * @param string[] $tags list of tags to remove from this job
      *
      * @return string[] the new list of tags
      */
     public function tag(...$tags) {
-        return $this->tags = json_decode(call_user_func_array([$this->client, 'call'], array_merge(['tag', 'add', $this->jid], $tags)), true);
+        return $this->tags = json_decode($this->client->tag('add', $this->jid, ...$tags), true);
     }
 
     /**
      * Remove the specified tags to this job
      *
-     * @param string[] $tags ... list of tags to add to this job
+     * @param string[] $tags list of tags to add to this job
      *
      * @return string[] the new list of tags
      */
     public function untag(...$tags) {
-        return $this->tags = json_decode(call_user_func_array([$this->client, 'call'], array_merge(['tag', 'remove', $this->jid], $tags)), true);
+        return $this->tags = json_decode($this->client->tag('remove', $this->jid, ...$tags), true);
     }
 
     /**
@@ -247,7 +247,7 @@ class Job
     /**
      * Change the status of this job to complete
      *
-     * @return bool
+     * @return string
      */
     public function complete() {
         $jsonData = json_encode($this->data, JSON_UNESCAPED_SLASHES);
@@ -264,7 +264,7 @@ class Job
      * optional values to replace when re-queuing job
      *
      * * int delay          delay (in seconds)
-     * * array data         replacement data
+     * * mixed data         replacement data
      * * int priority       replacement priority
      * * int retries        replacement number of retries
      * * string[] tags      replacement tags
@@ -324,12 +324,11 @@ class Job
     }
 
     /**
-     * @param array|string|bool|null $data
+     * @param mixed $data
      *
      * @return int timestamp of the heartbeat
      */
     public function heartbeat($data = null) {
-        // (now, jid, worker, data)
         if (is_array($data)) {
             $data = json_encode($data, JSON_UNESCAPED_SLASHES);
         }
@@ -364,11 +363,10 @@ class Job
     }
 
     /**
-     * @param $group
-     * @param $message
+     * @param string $group
+     * @param string $message
      *
      * @return bool
-     * return values -
      */
     public function fail($group, $message) {
         $jsonData = json_encode($this->data, JSON_UNESCAPED_SLASHES);
@@ -394,12 +392,20 @@ class Job
             return $this->instance;
         }
 
+        if (!$this->klass_name) {
+            throw new \Exception('Job class not specified.');
+        }
+
+        if (!is_array($this->data) || !isset($this->data['performMethod'])) {
+            throw new \Exception('Perform method not specified.');
+        }
+
         if (!class_exists($this->klass_name)) {
-            throw new \Exception('Could not find job class ' . $this->klass_name . '.');
+            throw new \Exception('Job class ' . $this->klass_name . ' not found.');
         }
 
         if (!method_exists($this->klass_name, $this->data['performMethod'])) {
-            throw new \Exception('Job class ' . $this->klass_name . ' does not contain perform method ' . $this->data['performMethod']);
+            throw new \Exception('Perform method ' . $this->data['performMethod'] . ' not found in job class ' . $this->klass_name . '.');
         }
 
         return $this->instance = new $this->klass_name;;

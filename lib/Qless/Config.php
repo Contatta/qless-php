@@ -18,10 +18,10 @@ class Config
     /**
      * Gets the value for the specified config name, falling back to the default if it does not exist
      *
-     * @param string $name
-     * @param mixed  $default
+     * @param string          $name
+     * @param string|int|bool $default
      *
-     * @return mixed
+     * @return string|int|bool
      */
     public function get($name, $default = null) {
         $res = $this->client->lua->run('config.get', [$name]);

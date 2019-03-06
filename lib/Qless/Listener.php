@@ -10,7 +10,7 @@ class Listener
     private $redis;
 
     /**
-     * @var array
+     * @var string[]
      */
     private $channels;
 

@@ -9,10 +9,7 @@ class JobHandler
 {
     public function perform(Qless\Job $job) {
         echo 'Here in JobHandler perform';
-        $instance      = $job->getInstance();
-        $data          = $job->getData();
-        $performMethod = $data['performMethod'];
-        $instance->$performMethod($job);
+        $job->perform();
     }
 }
 

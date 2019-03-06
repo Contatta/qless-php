@@ -37,20 +37,19 @@ class Jobs implements \ArrayAccess
     }
 
     /**
-     * Returns an array of jobs for the specified job identifiers, keyed by job identifier
+     * Returns a list of jobs for the specified job identifiers, keyed by job identifier
      *
      * @param string[] $jids
      *
-     * @return array|Job[]
+     * @return Job[]
      */
     public function multiget($jids) {
         if (empty($jids)) {
             return [];
         }
 
-        $results = call_user_func_array([$this->client, 'multiget'], $jids);
-        $jobs    = json_decode($results, true);
-        $ret     = [];
+        $jobs = json_decode($this->client->multiget(...$jids), true);
+        $ret  = [];
         foreach ($jobs as $job_data) {
             $job                = new Job($this->client, $job_data);
             $ret[$job->getId()] = $job;
@@ -60,7 +59,7 @@ class Jobs implements \ArrayAccess
     }
 
     /**
-     * Fetches a report of failed jobs for the specified group
+     * Fetches failed jobs for the specified group, keyed by job identifier
      *
      * @param string $group
      * @param int    $start
@@ -78,9 +77,9 @@ class Jobs implements \ArrayAccess
     }
 
     /**
-     * Fetches a report of failed jobs, where the key is the group and the value is the number of jobs
+     * Fetches the number of failed jobs for each group
      *
-     * @return array
+     * @return int[]
      */
     public function failed() {
         return json_decode($this->client->failed(), true);

@@ -60,7 +60,7 @@ class Lua
     }
 
     /**
-     * @param $error
+     * @param string $error
      *
      * @throws QlessException
      */

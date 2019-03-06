@@ -33,21 +33,19 @@ class Queue
      *
      * The `priority` argument should be negative to be run sooner rather than
      * later, and positive if it's less important. The `tags` argument should be
-     * a JSON array of the tags associated with the instance and the `valid after`
-     * argument should be in how many seconds the instance should be considered
-     * actionable.
+     * a list of tags associated with the instance.
      *
-     * @param string $klass     The class with the 'performMethod' specified in the data.
-     * @param string $jid       specified job id, if false is specified, a jid will be generated.
-     * @param mixed  $data      array of parameters for job.
-     * @param int    $delay     specify delay to run job.
-     * @param int    $retries   number of retries allowed.
-     * @param bool   $replace   false to prevent the job from being replaced if it is already running
-     * @param int    $priority  a greater priority will execute before jobs of lower priority
-     * @param array  $resources a list of resource identifiers this job must acquire before being processed
-     * @param float  $interval  the minimum number of seconds required to transpire before the next instance of this job can run
-     * @param array  $tags
-     * @param array  $depends   a list of JIDs this job must wait on before executing
+     * @param string   $klass     The class with the 'performMethod' specified in the data.
+     * @param string   $jid       specified job id, if false is specified, a jid will be generated.
+     * @param mixed    $data      job parameter(s).
+     * @param int      $delay     specify delay to run job.
+     * @param int      $retries   number of retries allowed.
+     * @param bool     $replace   false to prevent the job from being replaced if it is already running.
+     * @param int      $priority  a greater priority will execute before jobs of lower priority.
+     * @param string[] $resources a list of resource identifiers this job must acquire before being processed.
+     * @param float    $interval  the minimum number of seconds required to transpire before the next instance of this job can run.
+     * @param string[] $tags      List of tags to add to the job.
+     * @param string[] $depends   a list of JIDs this job must wait on before executing.
      *
      * @return string|float the job identifier or the time remaining before the job expires if the job is already running
      */
@@ -77,9 +75,7 @@ class Queue
      * @return Job[]
      */
     public function pop($worker, $numJobs = 1) {
-        $results = $this->client->pop($this->name, $worker, $numJobs);
-
-        $jobs = json_decode($results, true);
+        $jobs = json_decode($this->client->pop($this->name, $worker, $numJobs), true);
 
         $returnJobs = [];
         if (!empty($jobs)) {
@@ -96,17 +92,17 @@ class Queue
      *
      * The `priority` argument should be negative to be run sooner rather than
      * later, and positive if it's less important. The `tags` argument should be
-     * a JSON array of the tags associated with the instance.
+     * a list of the tags associated with the instance.
      *
-     * @param string $klass     The class with the 'performMethod' specified in the data.
-     * @param string $jid       specified job id, if false is specified, a jid will be generated.
-     * @param mixed  $data      array of parameters for job.
-     * @param int    $interval  The recurring interval in seconds.
-     * @param int    $offset    A delay before the first run in seconds.
-     * @param int    $retries   Number of times the job can retry when it runs.
-     * @param int    $priority  a negative priority will run sooner.
-     * @param array  $resources array of resource identifiers this job must acquire before being processed
-     * @param array  $tags      array of tags to add to the job.
+     * @param string   $klass     The class with the 'performMethod' specified in the data.
+     * @param string   $jid       specified job id, if false is specified, a jid will be generated.
+     * @param mixed    $data      Collection of job parameters.
+     * @param int      $interval  The recurring interval in seconds.
+     * @param int      $offset    A delay before the first run in seconds.
+     * @param int      $retries   Number of times the job can retry when it runs.
+     * @param int      $priority  a negative priority will run sooner.
+     * @param string[] $resources List of resource identifiers this job must acquire before being processed.
+     * @param string[] $tags      List of tags to add to the job.
      *
      * @return mixed
      */
@@ -128,7 +124,7 @@ class Queue
     /**
      * Cancels a job using the specified identifier
      *
-     * @param $jid
+     * @param string $jid
      *
      * @return int
      */
@@ -139,7 +135,7 @@ class Queue
     /**
      * Remove a recurring job using the specified identifier
      *
-     * @param $jid
+     * @param string $jid
      *
      * @return int
      */

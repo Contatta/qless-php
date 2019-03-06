@@ -425,7 +425,7 @@ class Worker
     }
 
     /**
-     * @param $status
+     * @param int $status
      *
      * @return bool
      */
@@ -523,7 +523,7 @@ class Worker
     }
 
     /**
-     * @param $status
+     * @param int $status
      *
      * @return bool
      */

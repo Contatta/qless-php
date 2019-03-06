@@ -99,7 +99,7 @@ class Client
     /**
      * Create a new listener
      *
-     * @param $channels
+     * @param string[] $channels
      *
      * @return Listener
      */
@@ -111,8 +111,8 @@ class Client
         return $this->lua->run($command, $arguments);
     }
 
-    public function __get($prop) {
-        if ($prop === 'jobs') {
+    public function __get($name) {
+        if ($name === 'jobs') {
             return $this->_jobs;
         }
 
@@ -123,7 +123,7 @@ class Client
     }
 
     public function __isset($name) {
-        return false;
+        return $name === 'jobs';
     }
 
     /**
@@ -152,7 +152,7 @@ class Client
     /**
      * APIs for manipulating a resource
      *
-     * @param $name
+     * @param string $name
      *
      * @return Resource
      */
