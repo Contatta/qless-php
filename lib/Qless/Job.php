@@ -247,10 +247,18 @@ class Job
     /**
      * Change the status of this job to complete
      *
+     * @param mixed $data
+     *
      * @return string
      */
-    public function complete() {
-        $jsonData = json_encode($this->data, JSON_UNESCAPED_SLASHES);
+    public function complete($data = null) {
+        if (!$data) {
+            $data = $this->data;
+        } elseif (is_array($this->data) && is_array($data)) {
+            $data = array_filter(array_merge($this->data, $data));
+        }
+        $jsonData = json_encode($data, JSON_UNESCAPED_SLASHES);
+
         return $this->client->complete(
             $this->jid,
             $this->worker_name,
@@ -276,32 +284,27 @@ class Job
      * @return string
      */
     public function requeue($opts = []) {
-        $opts = array_merge(
-            [
-                'delay'     => 0,
-                'data'      => $this->data,
-                'priority'  => $this->priority,
-                'retries'   => $this->getOriginalRetries(),
-                'tags'      => $this->getTags(),
-                'depends'   => $this->getDependencies(),
-                'resources' => $this->getResources(),
-                'interval'  => $this->getInterval(),
-            ],
-            $opts);
+        $data = $opts['data'] ?? null;
+        if (!$data) {
+            $data = $this->data;
+        } elseif (is_array($this->data) && is_array($data)) {
+            $data = array_filter(array_merge($this->data, $data));
+        }
+        $jsonData = json_encode($data, JSON_UNESCAPED_SLASHES);
 
         return $this->client->requeue(
             $this->worker_name,
             $this->queue_name,
             $this->jid,
             $this->klass_name,
-            json_encode($opts['data'], JSON_UNESCAPED_SLASHES),
-            $opts['delay'],
-            'priority', $opts['priority'],
-            'tags', json_encode($opts['tags'], JSON_UNESCAPED_SLASHES),
-            'retries', $opts['retries'],
-            'depends', json_encode($opts['depends'], JSON_UNESCAPED_SLASHES),
-            'resources', json_encode($opts['resources'], JSON_UNESCAPED_SLASHES),
-            'interval', (float)$opts['interval']);
+            $jsonData,
+            $opts['delay'] ?? 0,
+            'priority', $opts['priority'] ?? $this->priority,
+            'tags', json_encode($opts['tags'] ?? $this->tags, JSON_UNESCAPED_SLASHES),
+            'retries', $opts['retries'] ?? $this->getOriginalRetries(),
+            'depends', json_encode($opts['depends'] ?? $this->getDependencies(), JSON_UNESCAPED_SLASHES),
+            'resources', json_encode($opts['resources'] ?? $this->getResources(), JSON_UNESCAPED_SLASHES),
+            'interval', (float)($opts['interval'] ?? $this->getInterval()));
     }
 
     /**
@@ -329,15 +332,18 @@ class Job
      * @return int timestamp of the heartbeat
      */
     public function heartbeat($data = null) {
-        if (is_array($data)) {
-            $data = json_encode($data, JSON_UNESCAPED_SLASHES);
+        if (!$data) {
+            $data = $this->data;
+        } elseif (is_array($this->data) && is_array($data)) {
+            $data = array_filter(array_merge($this->data, $data));
         }
+        $jsonData = json_encode($data, JSON_UNESCAPED_SLASHES);
 
-        return $this->expires = $this->client->heartbeat($this->jid, $this->worker_name, $data);
+        return $this->expires = $this->client->heartbeat($this->jid, $this->worker_name, $jsonData);
     }
 
     /**
-     * Cancels the specified job and optionally all it's dependents
+     * Cancels the job and optionally all its dependents
      *
      * @param bool $dependents true if associated dependents should also be cancelled
      *
@@ -365,11 +371,17 @@ class Job
     /**
      * @param string $group
      * @param string $message
+     * @param mixed  $data
      *
      * @return bool
      */
-    public function fail($group, $message) {
-        $jsonData = json_encode($this->data, JSON_UNESCAPED_SLASHES);
+    public function fail($group, $message, $data = null) {
+        if (!$data) {
+            $data = $this->data;
+        } elseif (is_array($this->data) && is_array($data)) {
+            $data = array_filter(array_merge($this->data, $data));
+        }
+        $jsonData = json_encode($data, JSON_UNESCAPED_SLASHES);
 
         return $this->client->fail($this->jid, $this->worker_name, $group, $message, $jsonData);
     }
