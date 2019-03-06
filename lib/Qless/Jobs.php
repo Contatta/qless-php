@@ -63,17 +63,17 @@ class Jobs implements \ArrayAccess
      *
      * @param string $group
      * @param int    $start
-     * @param int    $limit
+     * @param int    $chunkSize
      *
-     * @return \Iterator|Job[]
+     * @return JobIterator
      */
-    public function failedForGroup($group, $start = 0, $limit = 25) {
-        $results = json_decode($this->client->failed($group, $start, $limit), true);
-        if (!empty($results['jobs'])) {
-            $results['jobs'] = $this->multiget($results['jobs']);
-        }
-
-        return $results;
+    public function failedForGroup($group, $start = 0, $chunkSize = 25) {
+        $pager = function () use ($group, &$start, $chunkSize) {
+            $res   = $this->client->failed($group, $start, $chunkSize);
+            $start += $chunkSize;
+            return $res;
+        };
+        return new JobIterator($pager, $this->client);
     }
 
     /**
@@ -83,6 +83,24 @@ class Jobs implements \ArrayAccess
      */
     public function failed() {
         return json_decode($this->client->failed(), true);
+    }
+
+    /**
+     * Fetches jobs with the specified tag, keyed by job identifier
+     *
+     * @param string $tag
+     * @param int    $start
+     * @param int    $chunkSize
+     *
+     * @return JobIterator
+     */
+    public function tagged($tag, $start = 0, $chunkSize = 25) {
+        $pager = function () use ($tag, &$start, $chunkSize) {
+            $res   = $this->client->tag('get', $tag, $start, $chunkSize);
+            $start += $chunkSize;
+            return $res;
+        };
+        return new JobIterator($pager, $this->client);
     }
 
     public function offsetExists($jid) {

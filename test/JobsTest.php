@@ -80,7 +80,7 @@ class JobsTest extends QlessTest
 
         $j = $this->client->jobs->failedForGroup('system');
 
-        $this->assertCount(3, $j['jobs']);
+        $this->assertCount(3, $j);
     }
 
     public function testItReturnsRunningJob() {
