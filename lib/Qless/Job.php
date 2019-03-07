@@ -108,7 +108,8 @@ class Job
 
     /**
      * Get the name of the queue this job is on.
-     * @return mixed
+     *
+     * @return string
      */
     public function getQueueName() {
         return $this->job_data['queue'];
@@ -396,6 +397,7 @@ class Job
     /**
      * Get the instance of the class specified on this job.  This instance will
      * be used to call the payload['performMethod']
+     *
      * @return mixed
      * @throws \Exception
      */

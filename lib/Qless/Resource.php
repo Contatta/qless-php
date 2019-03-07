@@ -37,6 +37,7 @@ class Resource
 
     /**
      * Gets the current lock count for this resource
+     *
      * @return int
      */
     public function getLockCount() {
@@ -56,6 +57,7 @@ class Resource
 
     /**
      * Gets the current lock count for this resource
+     *
      * @return int
      */
     public function getPendingCount() {
