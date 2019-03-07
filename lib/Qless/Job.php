@@ -253,12 +253,7 @@ class Job
      * @return string
      */
     public function complete($data = null) {
-        if (!$data) {
-            $data = $this->data;
-        } elseif (is_array($this->data) && is_array($data)) {
-            $data = array_filter(array_merge($this->data, $data));
-        }
-        $jsonData = json_encode($data, JSON_UNESCAPED_SLASHES);
+        $jsonData = $data ? json_encode($data, JSON_UNESCAPED_SLASHES) : null;
 
         return $this->client->complete(
             $this->jid,
@@ -285,13 +280,7 @@ class Job
      * @return string
      */
     public function requeue($opts = []) {
-        $data = $opts['data'] ?? null;
-        if (!$data) {
-            $data = $this->data;
-        } elseif (is_array($this->data) && is_array($data)) {
-            $data = array_filter(array_merge($this->data, $data));
-        }
-        $jsonData = json_encode($data, JSON_UNESCAPED_SLASHES);
+        $jsonData = json_encode($opts['data'] ?? $this->data, JSON_UNESCAPED_SLASHES);
 
         return $this->client->requeue(
             $this->worker_name,
@@ -333,12 +322,7 @@ class Job
      * @return int timestamp of the heartbeat
      */
     public function heartbeat($data = null) {
-        if (!$data) {
-            $data = $this->data;
-        } elseif (is_array($this->data) && is_array($data)) {
-            $data = array_filter(array_merge($this->data, $data));
-        }
-        $jsonData = json_encode($data, JSON_UNESCAPED_SLASHES);
+        $jsonData = $data ? json_encode($data, JSON_UNESCAPED_SLASHES) : null;
 
         return $this->expires = $this->client->heartbeat($this->jid, $this->worker_name, $jsonData);
     }
@@ -377,12 +361,7 @@ class Job
      * @return bool
      */
     public function fail($group, $message, $data = null) {
-        if (!$data) {
-            $data = $this->data;
-        } elseif (is_array($this->data) && is_array($data)) {
-            $data = array_filter(array_merge($this->data, $data));
-        }
-        $jsonData = json_encode($data, JSON_UNESCAPED_SLASHES);
+        $jsonData = $data ? json_encode($data, JSON_UNESCAPED_SLASHES) : null;
 
         return $this->client->fail($this->jid, $this->worker_name, $group, $message, $jsonData);
     }
