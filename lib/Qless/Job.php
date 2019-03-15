@@ -253,7 +253,12 @@ class Job
      * @return string
      */
     public function complete($data = null) {
-        $jsonData = $data ? json_encode($data, JSON_UNESCAPED_SLASHES) : null;
+        if ($data !== null) {
+            $this->data = $data;
+            $jsonData   = json_encode($data, JSON_UNESCAPED_SLASHES);
+        } else {
+            $jsonData = null;
+        }
 
         return $this->client->complete(
             $this->jid,
@@ -322,7 +327,12 @@ class Job
      * @return int timestamp of the heartbeat
      */
     public function heartbeat($data = null) {
-        $jsonData = $data ? json_encode($data, JSON_UNESCAPED_SLASHES) : null;
+        if ($data !== null) {
+            $this->data = $data;
+            $jsonData   = json_encode($data, JSON_UNESCAPED_SLASHES);
+        } else {
+            $jsonData = null;
+        }
 
         return $this->expires = $this->client->heartbeat($this->jid, $this->worker_name, $jsonData);
     }
@@ -361,7 +371,12 @@ class Job
      * @return bool
      */
     public function fail($group, $message, $data = null) {
-        $jsonData = $data ? json_encode($data, JSON_UNESCAPED_SLASHES) : null;
+        if ($data !== null) {
+            $this->data = $data;
+            $jsonData   = json_encode($data, JSON_UNESCAPED_SLASHES);
+        } else {
+            $jsonData = null;
+        }
 
         return $this->client->fail($this->jid, $this->worker_name, $group, $message, $jsonData);
     }
