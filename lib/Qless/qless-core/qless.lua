@@ -1,4 +1,4 @@
--- Current SHA: f63241d2d40813d32ae9d26062d463a0dd5d1321
+-- Current SHA: 179c56d0d129cd748b6f2dd7e5230fb8354d2557
 -- This is a generated file
 local Qless = {
   ns = 'ql:'
@@ -105,6 +105,8 @@ function Qless.jobs(now, state, ...)
       return queue.locks.peek(now, offset, count)
     elseif state == 'stalled' then
       return queue.locks.expired(now, offset, count)
+    elseif state == 'waiting' then
+      return queue.work.peek(now, offset, count)
     elseif state == 'scheduled' then
       queue:check_scheduled(now, queue.scheduled.length())
       return queue.scheduled.peek(now, offset, count)
@@ -1117,13 +1119,13 @@ function Qless.queue(name)
   queue.name = name
 
   queue.work = {
-    peek = function(count)
+    peek = function(now, offset, count)
       if count == 0 then
         return {}
       end
       local jids = {}
       for index, jid in ipairs(redis.call(
-        'zrevrange', queue:prefix('work'), 0, count - 1)) do
+        'zrevrange', queue:prefix('work'), offset, offset + count - 1)) do
         table.insert(jids, jid)
       end
       return jids
@@ -1297,7 +1299,7 @@ function QlessQueue:peek(now, count)
 
   self:check_scheduled(now, count - #jids)
 
-  table.extend(jids, self.work.peek(count - #jids))
+  table.extend(jids, self.work.peek(now, 0, count - #jids))
 
   return jids
 end
@@ -1346,7 +1348,7 @@ function QlessQueue:pop(now, worker, count)
 
   self:check_scheduled(now, count - #jids)
 
-  table.extend(jids, self.work.peek(count - #jids))
+  table.extend(jids, self.work.peek(now, 0, count - #jids))
 
   local state
   for index, jid in ipairs(jids) do

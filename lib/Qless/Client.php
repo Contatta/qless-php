@@ -21,7 +21,7 @@ require_once __DIR__ . '/Jobs.php';
  * @method string requeue(string $worker, string $queue, string $jid, string $klass, string $data, int $delay_in_seconds, mixed ...$args)
  * @method int unrecur(string $jid)
  * @method int retry(string $jid, string $queue, string $worker, int $delay, string $group, string $message)
- * @method int cancel(string ...$jids)
+ * @method string[] cancel(string ...$jids)
  * @method string get(string $jid)
  * @method string multiget(string ...$jids)
  * @method string[] jobs(string $state, mixed ...$args)
@@ -31,6 +31,7 @@ require_once __DIR__ . '/Jobs.php';
  * @method void timeout(string ...$jids)
  * @method string tag(string $command, mixed ...$args)
  * @method string failed(string $group = null, int $start = 0, int $limit = 25)
+ * @method string queues(string $queue = null)
  *
  * @property-read Jobs jobs
  */
