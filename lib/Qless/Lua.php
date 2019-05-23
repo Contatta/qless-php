@@ -51,7 +51,14 @@ class Lua
         $luaArgs  = [$command, microtime(true)];
         $argArray = array_merge($luaArgs, $args);
         $result   = $this->redisCli->evalSha($this->sha, $argArray);
-        if ($error = $this->redisCli->getLastError()) {
+        $error    = $this->redisCli->getLastError();
+        if ($error && strpos($error, 'NOSCRIPT') === 0) {
+            $this->redisCli->clearLastError();
+            $script    = file_get_contents(__DIR__ . '/qless-core/qless.lua', true);
+            $this->sha = $this->redisCli->script('load', $script);
+            $error     = $this->redisCli->getLastError();
+        }
+        if ($error) {
             $this->handleError($error);
             return null;
         }
