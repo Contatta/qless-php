@@ -27,12 +27,21 @@ class Listener
      * @param callable $callback
      */
     public function messages(callable $callback) {
-        $this->redis->subscribe($this->channels, function (\Redis $redis, $channel, $data) use ($callback) {
-            $callback($channel, json_decode($data));
-        });
+        try {
+            $this->redis->subscribe($this->channels, function (\Redis $redis, $channel, $data) use ($callback) {
+                $callback($channel, json_decode($data));
+            });
+        } catch (\RedisException $e) {
+            if ($e->getMessage() !== 'Connection closed') {
+                throw $e;
+            }
+        }
     }
 
     public function stop() {
+        $this->redis->unsubscribe($this->channels);
+        // workaround: give the above unsubscribe a chance to fully process
+        sleep(1);
         $this->redis->close();
     }
 }
