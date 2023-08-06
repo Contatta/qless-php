@@ -1,4 +1,4 @@
--- Current SHA: 179c56d0d129cd748b6f2dd7e5230fb8354d2557
+-- Current SHA: 8993d12c1f6d413bf4e9275b36f15d3499ceb0dc
 -- This is a generated file
 local Qless = {
   ns = 'ql:'
@@ -29,9 +29,9 @@ QlessResource.__index = QlessResource;
 
 Qless.config = {}
 
-function table.extend(self, other)
+local function extend_table(target, other)
   for i, v in ipairs(other) do
-    table.insert(self, v)
+    table.insert(target, v)
   end
 end
 
@@ -1299,7 +1299,7 @@ function QlessQueue:peek(now, count)
 
   self:check_scheduled(now, count - #jids)
 
-  table.extend(jids, self.work.peek(now, 0, count - #jids))
+  extend_table(jids, self.work.peek(now, 0, count - #jids))
 
   return jids
 end
@@ -1348,7 +1348,7 @@ function QlessQueue:pop(now, worker, count)
 
   self:check_scheduled(now, count - #jids)
 
-  table.extend(jids, self.work.peek(now, 0, count - #jids))
+  extend_table(jids, self.work.peek(now, 0, count - #jids))
 
   local state
   for index, jid in ipairs(jids) do
